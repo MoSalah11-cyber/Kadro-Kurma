@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İlk 11'i Kur</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #121212;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+
+        .score-box {
+            background: #2c3e50;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .pitch {
+            background: #27ae60;
+            width: 100%;
+            max-width: 600px;
+            padding: 30px 0;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            position: relative;
+            background-image: repeating-linear-gradient(
+                0deg, transparent, transparent 40px, rgba(255,255,255,0.05) 40px, rgba(255,255,255,0.05) 80px
+            );
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-evenly;
+            margin-bottom: 25px;
+        }
+
+        .slot-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 90px;
+            text-align: center;
+        }
+
+        .slot {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px dashed #ecf0f1;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            background-size: cover;
+            background-position: center top;
+            font-size: 24px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .slot:hover {
+            transform: scale(1.1);
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+
+        .slot.filled {
+            border: 2px solid #f1c40f;
+            color: transparent; 
+        }
+
+        .pos-badge {
+            background: #000;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: -10px;
+            z-index: 2;
+        }
+
+        .criteria {
+            font-size: 10px;
+            margin-top: 5px;
+            background: rgba(0,0,0,0.7);
+            padding: 4px;
+            border-radius: 4px;
+            min-height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player-name {
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 3px;
+            color: #f1c40f;
+            display: none;
+        }
+
+        /* Modal ve Arama Çubuğu */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .modal-content {
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            background: #34495e;
+            color: #fff;
+            transition: 0.2s;
+        }
+
+        .modal input.error {
+            border-color: #e74c3c;
+            animation: shake 0.4s;
+        }
+
+        .results {
+            max-height: 250px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            background: #1abc9c;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .player-item:hover {
+            background: #16a085;
+        }
+
+        .player-item img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            margin-right: 15px;
+            background: #fff;
+        }
+
+        #share-btn {
+            display: none;
+            margin-top: 25px;
+            padding: 15px 30px;
+            background: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #share-btn:hover { background: #2980b9; }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-6px); }
+            100% { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>Grid 11</h2>
+        <div class="score-box">Skor: <span id="scoreVal">0</span></div>
+    </div>
+
+    <!-- Saha Dizilişi (4-4-2) -->
+    <div class="pitch" id="pitch">
+        <div class="row">
+            <div class="slot-container" id="slot-st-l"></div>
+            <div class="slot-container" id="slot-st-r"></div>
+        </div>
+        <div class="row">
+            <div class="slot-container" id="slot-lm"></div>
+            <div class="slot-container" id="slot-cm-l"></div>
+            <div class="slot-container" id="slot-cm-r"></div>
+            <div class="slot-container" id="slot-rm"></div>
+        </div>
+        <div class="row">
+            <div class="slot-container" id="slot-lb"></div>
+            <div class="slot-container" id="slot-cb-l"></div>
+            <div class="slot-container" id="slot-cb-r"></div>
+            <div class="slot-container" id="slot-rb"></div>
+        </div>
+        <div class="row">
+            <div class="slot-container" id="slot-gk"></div>
+        </div>
+    </div>
+
+    <button id="share-btn" onclick="shareScore()">Kadro ve Puanı Paylaş 📤</button>
+
+    <!-- Arama Menüsü -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3 id="modal-title" style="margin-top:0; color:#ecf0f1;"></h3>
+            <input type="text" id="searchInput" placeholder="İsim yaz..." autocomplete="off">
+            <div class="results" id="resultsList"></div>
+            <button onclick="closeModal()" style="margin-top:15px; padding:10px; width:100%; border:none; border-radius:5px; background:#e74c3c; color:#fff; cursor:pointer; font-weight:bold;">Vazgeç</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let filledCount = 0;
+        let activeSlotId = null;
+
+        // Prototip için rastgele sahte veritabanımız (Transfermarkt öncesi test)
+        const dbPlayers = [
+            { name: "Dani Osvaldo", pos: "ST", img: "https://cdn.sofifa.net/players/176/993/16_120.png", traits: ["serie_a_3"] },
+            { name: "Mauro Icardi", pos: "ST", img: "https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["psg", "gol_400"] },
+            { name: "Elvis Manu", pos: "RM", img: "https://cdn.sofifa.net/players/208/093/22_120.png", traits: ["super_lig"] },
+            { name: "Leroy Sané", pos: "RM", img: "https://cdn.sofifa.net/players/222/492/24_120.png", traits: ["alman"] },
+            { name: "Gabriel Sara", pos: "CM", img: "https://cdn.sofifa.net/players/247/204/24_120.png", traits: ["brezilya"] },
+            { name: "Mario Lemina", pos: "CM", img: "https://cdn.sofifa.net/players/212/883/24_120.png", traits: ["super_lig"] },
+            { name: "Paolo Maldini", pos: "CB", img: "https://cdn.sofifa.net/players/110/9/09_120.png", traits: ["tek_takim"] },
+            { name: "Abdülkerim Bardakçı", pos: "CB", img: "https://cdn.sofifa.net/players/232/730/24_120.png", traits: ["sol_ayak"] },
+            { name: "Noa Lang", pos: "LM", img: "https://cdn.sofifa.net/players/247/802/24_120.png", traits: ["eredivisie"] },
+            { name: "Kyle Walker", pos: "RB", img: "https://cdn.sofifa.net/players/188/350/24_120.png", traits: ["ingiliz"] },
+            { name: "Jordi Alba", pos: "LB", img: "https://cdn.sofifa.net/players/189/332/24_120.png", traits: ["ispanyol"] },
+            { name: "Gregor Kobel", pos: "GK", img: "https://cdn.sofifa.net/players/234/396/24_120.png", traits: ["bundesliga"] },
+            { name: "Mohamed Salah", pos: "ST", img: "https://cdn.sofifa.net/players/209/331/24_120.png", traits: ["gol_400", "premier_lig"] }
+        ];
+
+        // Bugünün Şartları ve Dizilişi
+        const todayGrid = {
+            "slot-st-l": { pos: "ST", criteriaText: "Serie A'da 3+ takım", reqTrait: "serie_a_3" },
+            "slot-st-r": { pos: "ST", criteriaText: "400+ Kariyer Golü", reqTrait: "gol_400" },
+            "slot-lm": { pos: "LM", criteriaText: "Eredivisie Oynamış", reqTrait: "eredivisie" },
+            "slot-cm-l": { pos: "CM", criteriaText: "Süper Lig Oynamış", reqTrait: "super_lig" },
+            "slot-cm-r": { pos: "CM", criteriaText: "Brezilyalı", reqTrait: "brezilya" },
+            "slot-rm": { pos: "RM", criteriaText: "Alman Oyuncu", reqTrait: "alman" },
+            "slot-lb": { pos: "LB", criteriaText: "İspanyol", reqTrait: "ispanyol" },
+            "slot-cb-l": { pos: "CB", criteriaText: "Sol Ayaklı Stoper", reqTrait: "sol_ayak" },
+            "slot-cb-r": { pos: "CB", criteriaText: "Tek Takım Efsanesi", reqTrait: "tek_takim" },
+            "slot-rb": { pos: "RB", criteriaText: "İngiliz Bek", reqTrait: "ingiliz" },
+            "slot-gk": { pos: "GK", criteriaText: "Bundesliga Eldiveni", reqTrait: "bundesliga" }
+        };
+
+        // Ekranı Çizdirme
+        window.onload = () => {
+            for (let id in todayGrid) {
+                const data = todayGrid[id];
+                const container = document.getElementById(id);
+                container.innerHTML = `
+                    <div class="slot" id="${id}-btn" onclick="openSearch('${id}')">+</div>
+                    <div class="pos-badge">${data.pos}</div>
+                    <div class="player-name" id="${id}-name"></div>
+                    <div class="criteria">${data.criteriaText}</div>
+                `;
+            }
+        };
+
+        // Arama Motorunu Aç
+        function openSearch(slotId) {
+            // Eğer daha önce doldurulduysa tıklanamaz
+            if (document.getElementById(`${slotId}-btn`).classList.contains("filled")) return;
+            
+            activeSlotId = slotId;
+            const pos = todayGrid[slotId].pos;
+            document.getElementById("modal-title").innerText = `${pos} Aranıyor...`;
+            document.getElementById("searchInput").value = "";
+            document.getElementById("searchInput").classList.remove("error");
+            document.getElementById("resultsList").innerHTML = "";
+            document.getElementById("modal").style.display = "flex";
+            document.getElementById("searchInput").focus();
+        }
+
+        function closeModal() {
+            document.getElementById("modal").style.display = "none";
+        }
+
+        // Kullanıcı harf girdikçe çalışan filtre
+        document.getElementById("searchInput").addEventListener("input", function(e) {
+            const val = e.target.value.toLowerCase();
+            const resultsBox = document.getElementById("resultsList");
+            resultsBox.innerHTML = "";
+            this.classList.remove("error");
+
+            if (val.length < 2) return; // En az 2 harf yazsın
+
+            const targetPos = todayGrid[activeSlotId].pos;
+
+            // Sadece seçili mevkiye uygun olanları listele (Hata yapmayı önlemek için konuştuğumuz filtre)
+            const filtered = dbPlayers.filter(p => 
+                p.pos === targetPos && p.name.toLowerCase().includes(val)
+            );
+
+            filtered.forEach(player => {
+                const div = document.createElement("div");
+                div.className = "player-item";
+                div.innerHTML = `<img src="${player.img}" alt="face"> ${player.name}`;
+                div.onclick = () => attemptPlacePlayer(player);
+                resultsBox.appendChild(div);
+            });
+        });
+
+        // Oyuncuyu slota yerleştirmeyi dene
+        function attemptPlacePlayer(player) {
+            score++;
+            document.getElementById("scoreVal").innerText = score;
+            
+            const reqTrait = todayGrid[activeSlotId].reqTrait;
+            const inputField = document.getElementById("searchInput");
+
+            // Kriter kontrolü
+            if (player.traits.includes(reqTrait)) {
+                // DOĞRU
+                const slotBtn = document.getElementById(`${activeSlotId}-btn`);
+                const nameLabel = document.getElementById(`${activeSlotId}-name`);
+                
+                slotBtn.style.backgroundImage = `url(${player.img})`;
+                slotBtn.classList.add("filled");
+                nameLabel.innerText = player.name;
+                nameLabel.style.display = "block";
+                
+                filledCount++;
+                closeModal();
+
+                if (filledCount === 11) {
+                    document.getElementById("share-btn").style.display = "block";
+                }
+            } else {
+                // YANLIŞ - Titreme ve kırmızı yanma animasyonu
+                inputField.classList.remove("error");
+                void inputField.offsetWidth; // Animasyonu sıfırlamak için ufak bi hile
+                inputField.classList.add("error");
+            }
+        }
+
+        // Skoru Paylaş
+        function shareScore() {
+            const text = `⚽ Grid 11'i ${score} denemede tamamladım!\nSen kaç denemede bitireceksin?\n[Sitenin Linki Buraya Gelecek]`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Sonucun panoya kopyalandı! Twitter'da yapıştırıp hava atabilirsin.");
+            });
+        }
+    </script>
+</body>
+</html>
