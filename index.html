@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grid 11</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -81,6 +82,13 @@
             box-sizing: border-box;
         }
 
+        /* Ekran Görüntüsü Alınacak Alan (Capture Area) */
+        #capture-area {
+            padding: 15px;
+            border-radius: 16px;
+            background: radial-gradient(circle at center, #0a1f12 0%, #020604 100%); /* İndirilen fotoda arka plan siyah olmasın diye */
+        }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -93,7 +101,7 @@
             color: #bdc3c7;
         }
         
-        .user-info span { color: #2ecc71; font-weight: 600; font-size: 16px;}
+        .user-info span { color: #2ecc71; font-weight: 600; font-size: 18px;}
 
         .score-box {
             background: rgba(0,0,0,0.5);
@@ -105,7 +113,7 @@
 
         /* Cam Efektli Saha */
         .pitch {
-            background: rgba(15, 45, 25, 0.4);
+            background: rgba(15, 45, 25, 0.8); /* Screenshot için biraz daha opak yaptık */
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -128,7 +136,6 @@
             text-align: center;
         }
 
-        /* Dikdörtgen Kart Tasarımı */
         .slot {
             width: 65px;
             height: 95px;
@@ -171,7 +178,6 @@
             color: #2ecc71;
         }
 
-        /* Tıklanabilir Kriter Alanı */
         .criteria {
             font-size: 10px;
             margin-top: 8px;
@@ -199,6 +205,31 @@
             display: none;
         }
 
+        /* FİNAL PAYLAŞ BUTONU */
+        #final-share-btn {
+            display: none;
+            width: 100%;
+            margin-top: 20px;
+            padding: 15px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.3s;
+            font-family: inherit;
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #final-share-btn:hover {
+            background: #2ecc71;
+            transform: scale(1.02);
+        }
+
         /* --- MODAL GENEL AYARLARI --- */
         .modal {
             display: none;
@@ -212,7 +243,7 @@
             perspective: 1000px;
         }
 
-        /* NORMAL ARAMA MODALI */
+        /* ARAMA MODALI */
         #search-modal-content {
             background: #1a251e;
             padding: 20px;
@@ -241,7 +272,6 @@
             border: 1px solid #2ecc71;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             text-align: center;
-            
             transform: rotateY(90deg) scale(0.8);
             opacity: 0;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -267,6 +297,50 @@
             margin-bottom: 25px;
             line-height: 1.4;
         }
+
+        /* PAYLAŞIM SONUÇ MODALI */
+        #result-modal-content {
+            background: #1a251e;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #generated-image-preview {
+            width: 100%;
+            border-radius: 8px;
+            border: 2px solid #2ecc71;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btns button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            color: #fff;
+            transition: 0.2s;
+        }
+
+        .btn-download { background: #f39c12; }
+        .btn-download:hover { background: #f1c40f; }
+
+        .btn-social { background: #3498db; }
+        .btn-social:hover { background: #2980b9; }
 
         /* ORTAK ARAMA VE BUTON STİLLERİ */
         input[type="text"] {
@@ -350,7 +424,6 @@
 </head>
 <body>
 
-    <!-- LOBİ EKRANI -->
     <div id="login-screen">
         <h1>GRID 11</h1>
         <p style="color: #bdc3c7; font-size: 14px; margin-bottom: 25px;">Futbol hafızanı test et.</p>
@@ -358,37 +431,40 @@
         <button class="play-btn" onclick="startGame()">Günün Gridini Oyna</button>
     </div>
 
-    <!-- OYUN EKRANI -->
     <div id="game-container">
-        <div class="header">
-            <div class="user-info">Menajer: <span id="display-nickname">---</span></div>
-            <div class="score-box">Skor: <span id="scoreVal" style="color: #f1c40f;">0</span></div>
+        
+        <div id="capture-area">
+            <div class="header">
+                <div class="user-info"><span id="display-nickname">---</span>'in İlk 11'i</div>
+                <div class="score-box">Skor: <span id="scoreVal" style="color: #f1c40f;">0</span></div>
+            </div>
+
+            <div class="pitch" id="pitch">
+                <div class="row">
+                    <div class="slot-container" id="slot-st-l"></div>
+                    <div class="slot-container" id="slot-st-r"></div>
+                </div>
+                <div class="row">
+                    <div class="slot-container" id="slot-lm"></div>
+                    <div class="slot-container" id="slot-cm-l"></div>
+                    <div class="slot-container" id="slot-cm-r"></div>
+                    <div class="slot-container" id="slot-rm"></div>
+                </div>
+                <div class="row">
+                    <div class="slot-container" id="slot-lb"></div>
+                    <div class="slot-container" id="slot-cb-l"></div>
+                    <div class="slot-container" id="slot-cb-r"></div>
+                    <div class="slot-container" id="slot-rb"></div>
+                </div>
+                <div class="row">
+                    <div class="slot-container" id="slot-gk"></div>
+                </div>
+            </div>
         </div>
 
-        <div class="pitch" id="pitch">
-            <div class="row">
-                <div class="slot-container" id="slot-st-l"></div>
-                <div class="slot-container" id="slot-st-r"></div>
-            </div>
-            <div class="row">
-                <div class="slot-container" id="slot-lm"></div>
-                <div class="slot-container" id="slot-cm-l"></div>
-                <div class="slot-container" id="slot-cm-r"></div>
-                <div class="slot-container" id="slot-rm"></div>
-            </div>
-            <div class="row">
-                <div class="slot-container" id="slot-lb"></div>
-                <div class="slot-container" id="slot-cb-l"></div>
-                <div class="slot-container" id="slot-cb-r"></div>
-                <div class="slot-container" id="slot-rb"></div>
-            </div>
-            <div class="row">
-                <div class="slot-container" id="slot-gk"></div>
-            </div>
-        </div>
+        <button id="final-share-btn" onclick="generateShareImage()">📤 PAYLAŞ</button>
     </div>
 
-    <!-- NORMAL ARAMA MODALI (Slota tıklanınca) -->
     <div class="modal" id="search-modal">
         <div id="search-modal-content">
             <div class="search-header">
@@ -400,7 +476,6 @@
         </div>
     </div>
 
-    <!-- 3D KART MODALI (Kritere tıklanınca) -->
     <div class="modal" id="card-modal">
         <div id="card-modal-content">
             <div class="modal-pos" id="card-pos">MEVKİ</div>
@@ -410,26 +485,41 @@
         </div>
     </div>
 
+    <div class="modal" id="result-modal">
+        <div id="result-modal-content">
+            <h2 style="margin:0; color:#2ecc71; font-weight:800;">EFSANE KADRO!</h2>
+            <p style="margin:0; font-size:12px; color:#bdc3c7;">Görselin hazır, arkadaşlarına hava atma vakti.</p>
+            
+            <img id="generated-image-preview" src="" alt="Kadro Görseli">
+            
+            <div class="action-btns">
+                <button class="btn-download" onclick="downloadImage()">⬇️ Resmi İndir</button>
+                <button class="btn-social" onclick="shareToApps()">📤 Uygulamalarda Paylaş</button>
+            </div>
+            <button class="close-btn" style="margin-top: 5px;" onclick="closeModal('result-modal')">Kapat</button>
+        </div>
+    </div>
+
     <script>
         let score = 0;
         let filledCount = 0;
         let activeSlotId = null;
         let username = "";
+        let generatedImageData = ""; // Ekran görüntüsünü burada tutacağız
 
+        // HER MEVKİ İÇİN FULL TEST VERİTABANI
         const dbPlayers = [
             { name: "Dani Osvaldo", pos: "ST", img: "https://cdn.sofifa.net/players/176/993/16_120.png", traits: ["serie_a_3"] },
-            { name: "Mauro Icardi", pos: "ST", img: "https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["psg", "gol_400"] },
-            { name: "Elvis Manu", pos: "RM", img: "https://cdn.sofifa.net/players/208/093/22_120.png", traits: ["super_lig"] },
-            { name: "Leroy Sané", pos: "RM", img: "https://cdn.sofifa.net/players/222/492/24_120.png", traits: ["alman"] },
-            { name: "Gabriel Sara", pos: "CM", img: "https://cdn.sofifa.net/players/247/204/24_120.png", traits: ["brezilya"] },
+            { name: "Luis Suárez", pos: "ST", img: "https://cdn.sofifa.net/players/176/580/24_120.png", traits: ["gol_400"] },
+            { name: "Dusan Tadic", pos: "LM", img: "https://cdn.sofifa.net/players/199/434/24_120.png", traits: ["eredivisie"] },
             { name: "Mario Lemina", pos: "CM", img: "https://cdn.sofifa.net/players/212/883/24_120.png", traits: ["super_lig"] },
-            { name: "Paolo Maldini", pos: "CB", img: "https://cdn.sofifa.net/players/110/9/09_120.png", traits: ["tek_takim"] },
-            { name: "Abdülkerim Bardakçı", pos: "CB", img: "https://cdn.sofifa.net/players/232/730/24_120.png", traits: ["sol_ayak"] },
-            { name: "Noa Lang", pos: "LM", img: "https://cdn.sofifa.net/players/247/802/24_120.png", traits: ["eredivisie"] },
-            { name: "Kyle Walker", pos: "RB", img: "https://cdn.sofifa.net/players/188/350/24_120.png", traits: ["ingiliz"] },
+            { name: "Gabriel Sara", pos: "CM", img: "https://cdn.sofifa.net/players/247/204/24_120.png", traits: ["brezilya"] },
+            { name: "Leroy Sané", pos: "RM", img: "https://cdn.sofifa.net/players/222/492/24_120.png", traits: ["alman"] },
             { name: "Jordi Alba", pos: "LB", img: "https://cdn.sofifa.net/players/189/332/24_120.png", traits: ["ispanyol"] },
-            { name: "Gregor Kobel", pos: "GK", img: "https://cdn.sofifa.net/players/234/396/24_120.png", traits: ["bundesliga"] },
-            { name: "Mohamed Salah", pos: "ST", img: "https://cdn.sofifa.net/players/209/331/24_120.png", traits: ["gol_400", "premier_lig"] }
+            { name: "Abdülkerim Bardakçı", pos: "CB", img: "https://cdn.sofifa.net/players/232/730/24_120.png", traits: ["sol_ayak"] },
+            { name: "Paolo Maldini", pos: "CB", img: "https://cdn.sofifa.net/players/110/9/09_120.png", traits: ["tek_takim"] },
+            { name: "Kyle Walker", pos: "RB", img: "https://cdn.sofifa.net/players/188/350/24_120.png", traits: ["ingiliz"] },
+            { name: "Gregor Kobel", pos: "GK", img: "https://cdn.sofifa.net/players/234/396/24_120.png", traits: ["bundesliga"] }
         ];
 
         const todayGrid = {
@@ -474,7 +564,6 @@
             }
         }
 
-        // SLOTA TIKLANINCA ÇALIŞAN DÜZ ARAMA
         function openSearch(slotId) {
             if (document.getElementById(`${slotId}-btn`).classList.contains("filled")) return;
             
@@ -482,13 +571,15 @@
             const pos = todayGrid[slotId].pos;
             
             document.getElementById("search-pos-title").innerText = pos + " ARANIYOR";
-            resetSearchInput();
+            const input = document.getElementById("searchInput");
+            input.value = "";
+            input.classList.remove("error");
+            document.getElementById("resultsList").innerHTML = "";
             
             document.getElementById("search-modal").style.display = "flex";
-            setTimeout(() => document.getElementById("searchInput").focus(), 10);
+            setTimeout(() => input.focus(), 10);
         }
 
-        // KRİTERE TIKLANINCA ÇALIŞAN 3D KART
         function openCard(slotId) {
             if (document.getElementById(`${slotId}-btn`).classList.contains("filled")) return;
             
@@ -501,36 +592,22 @@
             const modal = document.getElementById("card-modal");
             modal.style.display = "flex";
             
-            // Animasyon tetikleyici
-            setTimeout(() => {
-                modal.classList.add("show");
-            }, 10);
+            setTimeout(() => { modal.classList.add("show"); }, 10);
         }
 
-        // KARTTAN ARAMAYA GEÇİŞ BUTONU
         function switchFromCardToSearch() {
             closeModal('card-modal');
-            setTimeout(() => {
-                openSearch(activeSlotId);
-            }, 300); // Kartın kapanma animasyonunu bekleyip aramayı açar
+            setTimeout(() => { openSearch(activeSlotId); }, 300);
         }
 
         function closeModal(modalId) {
             const modal = document.getElementById(modalId);
             modal.classList.remove("show");
-            
             if(modalId === 'card-modal') {
                 setTimeout(() => { modal.style.display = "none"; }, 300);
             } else {
                 modal.style.display = "none";
             }
-        }
-
-        function resetSearchInput() {
-            const input = document.getElementById("searchInput");
-            input.value = "";
-            input.classList.remove("error");
-            document.getElementById("resultsList").innerHTML = "";
         }
 
         document.getElementById("searchInput").addEventListener("input", function(e) {
@@ -575,9 +652,11 @@
                 filledCount++;
                 closeModal('search-modal');
 
+                // OYUN BİTTİĞİNDE PAYLAŞ BUTONUNU GÖSTER
                 if (filledCount === 11) {
                     setTimeout(() => {
-                        alert("Helal! Kadroyu tamamladın. Sırada paylaşma ekranı var.");
+                        document.getElementById("final-share-btn").style.display = "block";
+                        window.scrollTo(0, document.body.scrollHeight);
                     }, 500);
                 }
             } else {
@@ -586,6 +665,55 @@
                 inputField.classList.add("error");
             }
         }
+
+        // FOTOĞRAF OLUŞTURMA FONKSİYONU
+        function generateShareImage() {
+            const captureArea = document.getElementById("capture-area");
+            const shareBtn = document.getElementById("final-share-btn");
+            shareBtn.innerText = "Görsel Hazırlanıyor... ⏳";
+            
+            html2canvas(captureArea, {
+                backgroundColor: "#0a1f12", // Arkası transparan kalmasın diye tam rengi veriyoruz
+                scale: 2 // Görüntü kalitesini artırmak için
+            }).then(canvas => {
+                generatedImageData = canvas.toDataURL("image/jpeg", 0.9);
+                document.getElementById("generated-image-preview").src = generatedImageData;
+                
+                document.getElementById("result-modal").style.display = "flex";
+                shareBtn.innerText = "📤 PAYLAŞ";
+            });
+        }
+
+        // GALERİYE İNDİRME
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = `Grid11_${username}_Skor${score}.jpg`;
+            link.href = generatedImageData;
+            link.click();
+        }
+
+        // UYGULAMALARDA (WP/IG/X) PAYLAŞMA API'Sİ
+        async function shareToApps() {
+            if (!navigator.share) {
+                alert("Tarayıcın direkt paylaşımı desteklemiyor reis. 'Resmi İndir' butonunu kullanıp galerinden Twitter/WhatsApp'a atabilirsin.");
+                return;
+            }
+
+            try {
+                // Base64 veriyi gerçek bir dosyaya(File) çeviriyoruz ki WP/IG kabul etsin
+                const blob = await (await fetch(generatedImageData)).blob();
+                const file = new File([blob], 'grid11.jpg', { type: 'image/jpeg' });
+
+                await navigator.share({
+                    title: 'Grid 11 Kadrom!',
+                    text: `Bugünkü Grid 11'i ${score} denemede bitirdim! Hadi sen de oyna.`,
+                    files: [file]
+                });
+            } catch (error) {
+                console.log("Paylaşım iptal edildi veya hata oluştu.", error);
+            }
+        }
     </script>
 </body>
 </html>
+                                                
