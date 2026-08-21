@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grid 11</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Ekran görüntüsü almak için html2canvas kütüphanesi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
@@ -82,42 +83,49 @@
             box-sizing: border-box;
         }
 
+        /* --- POSTER (ÇEKİM) ALANI --- */
         #capture-area {
-            padding: 15px;
+            padding: 20px;
             border-radius: 16px;
-            background: radial-gradient(circle at center, #0a1f12 0%, #020604 100%);
+            background: linear-gradient(135deg, #0f2d19 0%, #020604 100%);
+            border: 2px solid #2ecc71;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            position: relative;
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .capture-header {
+            text-align: center;
             margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        .user-info {
+        .capture-header h2 {
+            margin: 0;
+            color: #2ecc71;
+            font-size: 24px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .capture-header .score-badge {
+            display: inline-block;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-weight: 800;
+            color: #f1c40f;
+            border: 1px solid rgba(241, 196, 15, 0.3);
             font-size: 14px;
-            color: #bdc3c7;
-        }
-        
-        .user-info span { color: #2ecc71; font-weight: 600; font-size: 18px;}
-
-        .score-box {
-            background: rgba(0,0,0,0.5);
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.1);
         }
 
+        /* Cam Efektli Saha */
         .pitch {
-            background: rgba(15, 45, 25, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 30px 10px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px 10px;
         }
 
         .row {
@@ -152,12 +160,6 @@
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
 
-        .slot:hover {
-            transform: translateY(-5px);
-            border-color: #2ecc71;
-            background-color: rgba(0, 0, 0, 0.6);
-        }
-
         .slot.filled {
             border: 2px solid #f1c40f;
             color: transparent; 
@@ -185,14 +187,7 @@
             cursor: pointer;
             padding: 4px;
             border-radius: 4px;
-            transition: 0.2s;
             border: 1px solid transparent;
-        }
-
-        .criteria:hover {
-            color: #fff;
-            background: rgba(46, 204, 113, 0.15);
-            border-color: rgba(46, 204, 113, 0.3);
         }
 
         .player-name {
@@ -203,23 +198,24 @@
             display: none;
         }
 
+        /* FİNAL PAYLAŞ BUTONU (Emojisiz, Dümdüz) */
         #final-share-btn {
             display: none;
             width: 100%;
-            margin-top: 20px;
+            margin-top: 25px;
             padding: 15px;
             background: #27ae60;
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 800;
             cursor: pointer;
             transition: 0.3s;
             font-family: inherit;
             box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
         }
 
         #final-share-btn:hover {
@@ -233,20 +229,20 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.9);
             justify-content: center;
             align-items: center;
             z-index: 10;
-            perspective: 1000px;
         }
 
-        #search-modal-content {
+        #search-modal-content, #result-modal-content {
             background: #1a251e;
             padding: 20px;
             border-radius: 12px;
             width: 90%;
-            max-width: 350px;
+            max-width: 400px;
             border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
         }
 
         .search-header {
@@ -258,83 +254,49 @@
             font-weight: 800;
         }
 
-        #card-modal-content {
-            background: linear-gradient(135deg, #1e3c28 0%, #0a1f12 100%);
-            padding: 40px 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 300px;
-            border: 1px solid #2ecc71;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            text-align: center;
-            transform: rotateY(90deg) scale(0.8);
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .modal.show #card-modal-content {
-            transform: rotateY(0deg) scale(1);
-            opacity: 1;
-        }
-
-        .modal-pos {
-            font-size: 16px;
-            color: #2ecc71;
-            font-weight: 800;
-            letter-spacing: 2px;
-            margin-bottom: 15px;
-        }
-
-        .modal-criteria {
-            font-size: 22px;
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 25px;
-            line-height: 1.4;
-        }
-
-        #result-modal-content {
-            background: #1a251e;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 450px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.2);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
+        /* PAYLAŞIM SONUÇ MODALI & BUTONLARI */
         #generated-image-preview {
             width: 100%;
             border-radius: 8px;
             border: 2px solid #2ecc71;
+            margin: 15px 0;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
 
-        .action-btns {
-            display: flex;
+        .social-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .action-btns button {
-            flex: 1;
+        .social-btn {
             padding: 12px;
             border: none;
             border-radius: 8px;
-            font-weight: bold;
+            font-weight: 800;
+            font-size: 13px;
             cursor: pointer;
             font-family: inherit;
             color: #fff;
             transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
 
-        .btn-download { background: #f39c12; }
+        .btn-download { background: #f39c12; grid-column: span 2; font-size: 15px;}
         .btn-download:hover { background: #f1c40f; }
-
-        .btn-social { background: #3498db; }
-        .btn-social:hover { background: #2980b9; }
+        
+        .btn-wp { background: #25D366; }
+        .btn-wp:hover { background: #128C7E; }
+        
+        .btn-tw { background: #000000; border: 1px solid #333; }
+        .btn-tw:hover { background: #1da1f2; }
+        
+        .btn-ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+        .btn-ig:hover { opacity: 0.9; }
 
         input[type="text"] {
             width: 100%;
@@ -372,13 +334,6 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 13px;
-            transition: 0.2s;
-            border: 1px solid transparent;
-        }
-
-        .player-item:hover {
-            background: rgba(46, 204, 113, 0.2);
-            border-color: #2ecc71;
         }
 
         .player-item img {
@@ -390,21 +345,19 @@
         }
 
         .close-btn {
-            margin-top: 10px;
             padding: 10px;
             width: 100%;
             border: none;
             border-radius: 6px;
             background: transparent;
-            color: #e74c3c;
+            color: #bdc3c7;
             font-family: inherit;
             cursor: pointer;
             font-weight: 600;
-            border: 1px solid #e74c3c;
-            transition: 0.2s;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
-        .close-btn:hover { background: #e74c3c; color: #fff; }
+        .close-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
         @keyframes shake {
             0% { transform: translateX(0); }
@@ -425,10 +378,12 @@
     </div>
 
     <div id="game-container">
+        
+        <!-- İŞTE YENİ POSTER ALANI -->
         <div id="capture-area">
-            <div class="header">
-                <div class="user-info"><span id="display-nickname">---</span>'in İlk 11'i</div>
-                <div class="score-box">Skor: <span id="scoreVal" style="color: #f1c40f;">0</span></div>
+            <div class="capture-header">
+                <h2 id="capture-title">---'in İlk 11'i</h2>
+                <div class="score-badge">Toplam Skor: <span id="scoreVal">0</span></div>
             </div>
 
             <div class="pitch" id="pitch">
@@ -453,7 +408,8 @@
                 </div>
             </div>
         </div>
-        <button id="final-share-btn" onclick="generateShareImage()">📤 PAYLAŞ</button>
+
+        <button id="final-share-btn" onclick="generateShareImage()">PAYLAŞ</button>
     </div>
 
     <div class="modal" id="search-modal">
@@ -467,25 +423,20 @@
         </div>
     </div>
 
-    <div class="modal" id="card-modal">
-        <div id="card-modal-content">
-            <div class="modal-pos" id="card-pos">MEVKİ</div>
-            <div class="modal-criteria" id="card-title">Kriter Burada Yazacak</div>
-            <button class="play-btn" onclick="switchFromCardToSearch()">Oyuncu Ara</button>
-            <button class="close-btn" onclick="closeModal('card-modal')">Kapat</button>
-        </div>
-    </div>
-
+    <!-- PAYLAŞIM / İNDİRME MODALI -->
     <div class="modal" id="result-modal">
         <div id="result-modal-content">
-            <h2 style="margin:0; color:#2ecc71; font-weight:800;">EFSANE KADRO!</h2>
-            <p style="margin:0; font-size:12px; color:#bdc3c7;">Görselin hazır, arkadaşlarına hava atma vakti.</p>
+            <h2 style="margin:0; color:#2ecc71; font-weight:800; font-size:20px;">KADRON HAZIR!</h2>
             <img id="generated-image-preview" src="" alt="Kadro Görseli">
-            <div class="action-btns">
-                <button class="btn-download" onclick="downloadImage()">⬇️ Resmi İndir</button>
-                <button class="btn-social" onclick="shareToApps()">📤 Uygulamalarda Paylaş</button>
+            
+            <div class="social-grid">
+                <button class="social-btn btn-download" onclick="downloadImage()">İndir ⬇️</button>
+                <button class="social-btn btn-wp" onclick="shareToApps()">WhatsApp 💬</button>
+                <button class="social-btn btn-ig" onclick="shareToApps()">Instagram 📸</button>
+                <button class="social-btn btn-tw" onclick="shareToApps()">Twitter (X) 🐦</button>
             </div>
-            <button class="close-btn" style="margin-top: 5px;" onclick="closeModal('result-modal')">Kapat</button>
+            
+            <button class="close-btn" onclick="closeModal('result-modal')">Vazgeç</button>
         </div>
     </div>
 
@@ -545,7 +496,9 @@
                 return;
             }
             username = input;
-            document.getElementById("display-nickname").innerText = username;
+            
+            // Posterin başlığını ayarlıyoruz
+            document.getElementById("capture-title").innerText = `${username}'in İlk 11'i`;
             
             document.getElementById("login-screen").style.display = "none";
             document.getElementById("game-container").style.display = "block";
@@ -561,7 +514,7 @@
                     <div class="slot" id="${id}-btn" onclick="openSearch('${id}')">+</div>
                     <div class="pos-badge">${data.pos}</div>
                     <div class="player-name" id="${id}-name"></div>
-                    <div class="criteria" onclick="openCard('${id}')" title="Kriteri Büyüt">${data.criteriaText}</div>
+                    <div class="criteria">${data.criteriaText}</div>
                 `;
             }
         }
@@ -582,34 +535,8 @@
             setTimeout(() => input.focus(), 10);
         }
 
-        function openCard(slotId) {
-            if (document.getElementById(`${slotId}-btn`).classList.contains("filled")) return;
-            
-            activeSlotId = slotId;
-            const data = todayGrid[slotId];
-            
-            document.getElementById("card-pos").innerText = data.pos + " ARANIYOR";
-            document.getElementById("card-title").innerText = data.criteriaText;
-            
-            const modal = document.getElementById("card-modal");
-            modal.style.display = "flex";
-            
-            setTimeout(() => { modal.classList.add("show"); }, 10);
-        }
-
-        function switchFromCardToSearch() {
-            closeModal('card-modal');
-            setTimeout(() => { openSearch(activeSlotId); }, 300);
-        }
-
         function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.remove("show");
-            if(modalId === 'card-modal') {
-                setTimeout(() => { modal.style.display = "none"; }, 300);
-            } else {
-                modal.style.display = "none";
-            }
+            document.getElementById(modalId).style.display = "none";
         }
 
         document.getElementById("searchInput").addEventListener("input", function(e) {
@@ -670,44 +597,43 @@
         function generateShareImage() {
             const captureArea = document.getElementById("capture-area");
             const shareBtn = document.getElementById("final-share-btn");
-            shareBtn.innerText = "Görsel Hazırlanıyor... ⏳";
+            shareBtn.innerText = "HAZIRLANIYOR...";
             
             html2canvas(captureArea, {
-                backgroundColor: "#0a1f12",
+                backgroundColor: "#020604",
                 scale: 2
             }).then(canvas => {
                 generatedImageData = canvas.toDataURL("image/jpeg", 0.9);
                 document.getElementById("generated-image-preview").src = generatedImageData;
                 
                 document.getElementById("result-modal").style.display = "flex";
-                shareBtn.innerText = "📤 PAYLAŞ";
+                shareBtn.innerText = "PAYLAŞ";
             });
         }
 
         function downloadImage() {
             const link = document.createElement('a');
-            link.download = `Grid11_${username}_Skor${score}.jpg`;
+            link.download = `Grid11_${username}.jpg`;
             link.href = generatedImageData;
             link.click();
         }
 
         async function shareToApps() {
             if (!navigator.share) {
-                alert("Tarayıcın direkt paylaşımı desteklemiyor reis. 'Resmi İndir' butonunu kullanıp galerinden Twitter/WhatsApp'a atabilirsin.");
+                alert("Tarayıcın desteklemiyor reis. Önce 'İndir' butonuna basıp galerinden atabilirsin.");
                 return;
             }
-
             try {
                 const blob = await (await fetch(generatedImageData)).blob();
                 const file = new File([blob], 'grid11.jpg', { type: 'image/jpeg' });
 
                 await navigator.share({
-                    title: 'Grid 11 Kadrom!',
-                    text: `Bugünkü Grid 11'i ${score} denemede bitirdim! Hadi sen de oyna.`,
+                    title: 'Grid 11 Kadrom',
+                    text: `Bugünkü Grid 11'i ${score} skorla bitirdim!`,
                     files: [file]
                 });
             } catch (error) {
-                console.log("Paylaşım iptal edildi veya hata oluştu.", error);
+                console.log("Paylaşım iptal edildi.", error);
             }
         }
     </script>
