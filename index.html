@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grid 11</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
-    <!-- Ekran görüntüsü almak için html2canvas kütüphanesi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
@@ -20,7 +19,6 @@
             min-height: 100vh;
         }
 
-        /* --- GİRİŞ EKRANI --- */
         #login-screen {
             text-align: center;
             background: rgba(15, 45, 25, 0.6);
@@ -75,7 +73,6 @@
 
         .play-btn:hover { background: #2ecc71; transform: translateY(-2px); }
 
-        /* --- ANA OYUN EKRANI --- */
         #game-container {
             display: none;
             width: 100%;
@@ -84,12 +81,12 @@
             box-sizing: border-box;
         }
 
-        /* --- PREMIUM POSTER (ÇERÇEVE) ALANI --- */
+        /* PREMIUM POSTER (ÇERÇEVE) ALANI */
         #capture-area {
             padding: 30px 20px;
             border-radius: 20px;
             background: linear-gradient(135deg, #0a1f12 0%, #020604 100%);
-            border: 3px solid #f1c40f; /* Altın/Premium Çerçeve */
+            border: 3px solid #f1c40f; 
             box-shadow: 0 15px 40px rgba(0,0,0,0.8);
             position: relative;
         }
@@ -124,7 +121,6 @@
             box-shadow: 0 4px 10px rgba(46, 204, 113, 0.2);
         }
 
-        /* Çerçeve İçi Saha */
         .pitch {
             background: rgba(255, 255, 255, 0.02);
             border-radius: 12px;
@@ -200,7 +196,6 @@
             border-radius: 4px;
         }
 
-        /* FİNAL PAYLAŞ BUTONU (Emojisiz, Klas) */
         #final-share-btn {
             display: none;
             width: 100%;
@@ -224,7 +219,6 @@
             transform: scale(1.02);
         }
 
-        /* --- MODALLAR --- */
         .modal {
             display: none;
             position: fixed;
@@ -255,7 +249,6 @@
             font-weight: 800;
         }
 
-        /* PAYLAŞIM EKRANI VE BUTONLARI */
         #generated-image-preview {
             width: 100%;
             border-radius: 12px;
@@ -281,6 +274,10 @@
             font-family: inherit;
             color: #fff;
             transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
 
         .btn-download { background: #34495e; grid-column: span 2; font-size: 16px;}
@@ -354,14 +351,6 @@
         }
         
         .close-btn:hover { background: #e74c3c; color: #fff; }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            50% { transform: translateX(6px); }
-            75% { transform: translateX(-6px); }
-            100% { transform: translateX(0); }
-        }
     </style>
 </head>
 <body>
@@ -373,8 +362,6 @@
     </div>
 
     <div id="game-container">
-        
-        <!-- YENİ JİLET GİBİ ÇERÇEVELİ POSTER ALANI -->
         <div id="capture-area">
             <div class="capture-header">
                 <h2 id="capture-title">---'in İlk 11'i</h2>
@@ -418,14 +405,12 @@
         </div>
     </div>
 
-    <!-- PAYLAŞIM / İNDİRME MODALI -->
     <div class="modal" id="result-modal">
         <div id="result-modal-content">
             <h2 style="margin:0; color:#f1c40f; font-weight:800; font-size:20px; text-transform:uppercase;">Tebrikler!</h2>
             <img id="generated-image-preview" src="" alt="Kadro Görseli">
             
             <div class="social-grid">
-                <!-- Tarayıcı kısıtlamalarından dolayı bu butonların hepsi native paylaşım menüsünü açar -->
                 <button class="social-btn btn-wp" onclick="shareToApps()">WhatsApp</button>
                 <button class="social-btn btn-tw" onclick="shareToApps()">Twitter</button>
                 <button class="social-btn btn-ig" onclick="shareToApps()">Instagram</button>
@@ -443,19 +428,19 @@
         let username = "";
         let generatedImageData = "";
 
-        // HATA YAPMADAN TEST EDEBİLMEN İÇİN HER MEVKİYE UYGUN LİSTE
+        // RESİMLERİN ÇÖKMESİNİ ENGELLEYEN CORS PROXY BAĞLANTILARI EKLENDİ
         const dbPlayers = [
-            { name: "Dani Osvaldo", pos: "ST", img: "https://cdn.sofifa.net/players/176/993/16_120.png", traits: ["serie_a_3"] },
-            { name: "Mauro Icardi", pos: "ST", img: "https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["gol_400"] },
-            { name: "Noa Lang", pos: "LM", img: "https://cdn.sofifa.net/players/247/802/24_120.png", traits: ["eredivisie"] },
-            { name: "Mario Lemina", pos: "CM", img: "https://cdn.sofifa.net/players/212/883/24_120.png", traits: ["super_lig"] },
-            { name: "Gabriel Sara", pos: "CM", img: "https://cdn.sofifa.net/players/247/204/24_120.png", traits: ["brezilya"] },
-            { name: "Leroy Sané", pos: "RM", img: "https://cdn.sofifa.net/players/222/492/24_120.png", traits: ["alman"] },
-            { name: "Jordi Alba", pos: "LB", img: "https://cdn.sofifa.net/players/189/332/24_120.png", traits: ["ispanyol"] },
-            { name: "Abdülkerim Bardakçı", pos: "CB", img: "https://cdn.sofifa.net/players/232/730/24_120.png", traits: ["sol_ayak"] },
-            { name: "Paolo Maldini", pos: "CB", img: "https://cdn.sofifa.net/players/110/9/09_120.png", traits: ["tek_takim"] },
-            { name: "Kyle Walker", pos: "RB", img: "https://cdn.sofifa.net/players/188/350/24_120.png", traits: ["ingiliz"] },
-            { name: "Gregor Kobel", pos: "GK", img: "https://cdn.sofifa.net/players/234/396/24_120.png", traits: ["bundesliga"] }
+            { name: "Dani Osvaldo", pos: "ST", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/176/993/16_120.png", traits: ["serie_a_3"] },
+            { name: "Mauro Icardi", pos: "ST", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["gol_400"] },
+            { name: "Noa Lang", pos: "LM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/247/802/24_120.png", traits: ["eredivisie"] },
+            { name: "Mario Lemina", pos: "CM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/212/883/24_120.png", traits: ["super_lig"] },
+            { name: "Gabriel Sara", pos: "CM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/247/204/24_120.png", traits: ["brezilya"] },
+            { name: "Leroy Sané", pos: "RM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/222/492/24_120.png", traits: ["alman"] },
+            { name: "Jordi Alba", pos: "LB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/189/332/24_120.png", traits: ["ispanyol"] },
+            { name: "Abdülkerim Bardakçı", pos: "CB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/232/730/24_120.png", traits: ["sol_ayak"] },
+            { name: "Paolo Maldini", pos: "CB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/110/9/09_120.png", traits: ["tek_takim"] },
+            { name: "Kyle Walker", pos: "RB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/188/350/24_120.png", traits: ["ingiliz"] },
+            { name: "Gregor Kobel", pos: "GK", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/234/396/24_120.png", traits: ["bundesliga"] }
         ];
 
         const todayGrid = {
@@ -490,7 +475,6 @@
             }
             username = input;
             
-            // Posterin başlığını ayarlıyoruz
             document.getElementById("capture-title").innerText = `${username}'in İlk 11'i`;
             
             document.getElementById("login-screen").style.display = "none";
@@ -592,12 +576,11 @@
             const shareBtn = document.getElementById("final-share-btn");
             shareBtn.innerText = "YÜKLENİYOR...";
             
-            // CORS HATASINI ÇÖZEN HAYAT KURTARICI KOD BURADA (useCORS: true)
+            // KODUN ÇÖKMESİNİ ENGELLEYEN GÜVENLİ CANVAS AYARI
             html2canvas(captureArea, {
                 backgroundColor: "#020604",
                 scale: 2,
-                useCORS: true,
-                allowTaint: true
+                useCORS: true
             }).then(canvas => {
                 generatedImageData = canvas.toDataURL("image/jpeg", 0.9);
                 document.getElementById("generated-image-preview").src = generatedImageData;
@@ -617,7 +600,6 @@
             link.click();
         }
 
-        // TIKLANDIĞINDA TELEFONUN ORİJİNAL PAYLAŞIM EKRANINI AÇAR
         async function shareToApps() {
             if (!navigator.share) {
                 alert("Tarayıcın direkt paylaşımı desteklemiyor reis. 'Sadece İndir' butonuna basıp galerinden atabilirsin.");
