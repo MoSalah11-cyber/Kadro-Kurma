@@ -82,11 +82,10 @@
             box-sizing: border-box;
         }
 
-        /* Ekran Görüntüsü Alınacak Alan (Capture Area) */
         #capture-area {
             padding: 15px;
             border-radius: 16px;
-            background: radial-gradient(circle at center, #0a1f12 0%, #020604 100%); /* İndirilen fotoda arka plan siyah olmasın diye */
+            background: radial-gradient(circle at center, #0a1f12 0%, #020604 100%);
         }
 
         .header {
@@ -111,9 +110,8 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Cam Efektli Saha */
         .pitch {
-            background: rgba(15, 45, 25, 0.8); /* Screenshot için biraz daha opak yaptık */
+            background: rgba(15, 45, 25, 0.8);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -205,7 +203,6 @@
             display: none;
         }
 
-        /* FİNAL PAYLAŞ BUTONU */
         #final-share-btn {
             display: none;
             width: 100%;
@@ -230,7 +227,7 @@
             transform: scale(1.02);
         }
 
-        /* --- MODAL GENEL AYARLARI --- */
+        /* --- MODALLAR --- */
         .modal {
             display: none;
             position: fixed;
@@ -243,7 +240,6 @@
             perspective: 1000px;
         }
 
-        /* ARAMA MODALI */
         #search-modal-content {
             background: #1a251e;
             padding: 20px;
@@ -262,7 +258,6 @@
             font-weight: 800;
         }
 
-        /* 3D KART EFEKTLİ KRİTER MODALI */
         #card-modal-content {
             background: linear-gradient(135deg, #1e3c28 0%, #0a1f12 100%);
             padding: 40px 20px;
@@ -298,7 +293,6 @@
             line-height: 1.4;
         }
 
-        /* PAYLAŞIM SONUÇ MODALI */
         #result-modal-content {
             background: #1a251e;
             padding: 20px;
@@ -342,7 +336,6 @@
         .btn-social { background: #3498db; }
         .btn-social:hover { background: #2980b9; }
 
-        /* ORTAK ARAMA VE BUTON STİLLERİ */
         input[type="text"] {
             width: 100%;
             padding: 12px;
@@ -432,7 +425,6 @@
     </div>
 
     <div id="game-container">
-        
         <div id="capture-area">
             <div class="header">
                 <div class="user-info"><span id="display-nickname">---</span>'in İlk 11'i</div>
@@ -461,7 +453,6 @@
                 </div>
             </div>
         </div>
-
         <button id="final-share-btn" onclick="generateShareImage()">📤 PAYLAŞ</button>
     </div>
 
@@ -489,9 +480,7 @@
         <div id="result-modal-content">
             <h2 style="margin:0; color:#2ecc71; font-weight:800;">EFSANE KADRO!</h2>
             <p style="margin:0; font-size:12px; color:#bdc3c7;">Görselin hazır, arkadaşlarına hava atma vakti.</p>
-            
             <img id="generated-image-preview" src="" alt="Kadro Görseli">
-            
             <div class="action-btns">
                 <button class="btn-download" onclick="downloadImage()">⬇️ Resmi İndir</button>
                 <button class="btn-social" onclick="shareToApps()">📤 Uygulamalarda Paylaş</button>
@@ -505,16 +494,19 @@
         let filledCount = 0;
         let activeSlotId = null;
         let username = "";
-        let generatedImageData = ""; // Ekran görüntüsünü burada tutacağız
+        let generatedImageData = "";
 
-        // HER MEVKİ İÇİN FULL TEST VERİTABANI
         const dbPlayers = [
             { name: "Dani Osvaldo", pos: "ST", img: "https://cdn.sofifa.net/players/176/993/16_120.png", traits: ["serie_a_3"] },
+            { name: "Mauro Icardi", pos: "ST", img: "https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["gol_400", "psg"] },
             { name: "Luis Suárez", pos: "ST", img: "https://cdn.sofifa.net/players/176/580/24_120.png", traits: ["gol_400"] },
+            { name: "Mohamed Salah", pos: "ST", img: "https://cdn.sofifa.net/players/209/331/24_120.png", traits: ["gol_400", "premier_lig"] },
             { name: "Dusan Tadic", pos: "LM", img: "https://cdn.sofifa.net/players/199/434/24_120.png", traits: ["eredivisie"] },
+            { name: "Noa Lang", pos: "LM", img: "https://cdn.sofifa.net/players/247/802/24_120.png", traits: ["eredivisie"] },
             { name: "Mario Lemina", pos: "CM", img: "https://cdn.sofifa.net/players/212/883/24_120.png", traits: ["super_lig"] },
             { name: "Gabriel Sara", pos: "CM", img: "https://cdn.sofifa.net/players/247/204/24_120.png", traits: ["brezilya"] },
             { name: "Leroy Sané", pos: "RM", img: "https://cdn.sofifa.net/players/222/492/24_120.png", traits: ["alman"] },
+            { name: "Elvis Manu", pos: "RM", img: "https://cdn.sofifa.net/players/208/093/22_120.png", traits: ["super_lig"] },
             { name: "Jordi Alba", pos: "LB", img: "https://cdn.sofifa.net/players/189/332/24_120.png", traits: ["ispanyol"] },
             { name: "Abdülkerim Bardakçı", pos: "CB", img: "https://cdn.sofifa.net/players/232/730/24_120.png", traits: ["sol_ayak"] },
             { name: "Paolo Maldini", pos: "CB", img: "https://cdn.sofifa.net/players/110/9/09_120.png", traits: ["tek_takim"] },
@@ -535,6 +527,16 @@
             "slot-rb": { pos: "RB", criteriaText: "İngiliz Bek", reqTrait: "ingiliz" },
             "slot-gk": { pos: "GK", criteriaText: "Bundesliga Eldiveni", reqTrait: "bundesliga" }
         };
+
+        function normalizeMetin(metin) {
+            return metin.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i')
+                        .replace(/Ş/g, 's').replace(/ş/g, 's')
+                        .replace(/Ğ/g, 'g').replace(/ğ/g, 'g')
+                        .replace(/Ü/g, 'u').replace(/ü/g, 'u')
+                        .replace(/Ö/g, 'o').replace(/ö/g, 'o')
+                        .replace(/Ç/g, 'c').replace(/ç/g, 'c')
+                        .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
 
         function startGame() {
             const input = document.getElementById("nickname-input").value.trim();
@@ -611,7 +613,7 @@
         }
 
         document.getElementById("searchInput").addEventListener("input", function(e) {
-            const val = e.target.value.toLowerCase();
+            const val = normalizeMetin(e.target.value);
             const resultsBox = document.getElementById("resultsList");
             resultsBox.innerHTML = "";
             this.classList.remove("error");
@@ -620,7 +622,7 @@
 
             const targetPos = todayGrid[activeSlotId].pos;
             const filtered = dbPlayers.filter(p => 
-                p.pos === targetPos && p.name.toLowerCase().includes(val)
+                p.pos === targetPos && normalizeMetin(p.name).includes(val)
             );
 
             filtered.forEach(player => {
@@ -652,7 +654,6 @@
                 filledCount++;
                 closeModal('search-modal');
 
-                // OYUN BİTTİĞİNDE PAYLAŞ BUTONUNU GÖSTER
                 if (filledCount === 11) {
                     setTimeout(() => {
                         document.getElementById("final-share-btn").style.display = "block";
@@ -666,15 +667,14 @@
             }
         }
 
-        // FOTOĞRAF OLUŞTURMA FONKSİYONU
         function generateShareImage() {
             const captureArea = document.getElementById("capture-area");
             const shareBtn = document.getElementById("final-share-btn");
             shareBtn.innerText = "Görsel Hazırlanıyor... ⏳";
             
             html2canvas(captureArea, {
-                backgroundColor: "#0a1f12", // Arkası transparan kalmasın diye tam rengi veriyoruz
-                scale: 2 // Görüntü kalitesini artırmak için
+                backgroundColor: "#0a1f12",
+                scale: 2
             }).then(canvas => {
                 generatedImageData = canvas.toDataURL("image/jpeg", 0.9);
                 document.getElementById("generated-image-preview").src = generatedImageData;
@@ -684,7 +684,6 @@
             });
         }
 
-        // GALERİYE İNDİRME
         function downloadImage() {
             const link = document.createElement('a');
             link.download = `Grid11_${username}_Skor${score}.jpg`;
@@ -692,7 +691,6 @@
             link.click();
         }
 
-        // UYGULAMALARDA (WP/IG/X) PAYLAŞMA API'Sİ
         async function shareToApps() {
             if (!navigator.share) {
                 alert("Tarayıcın direkt paylaşımı desteklemiyor reis. 'Resmi İndir' butonunu kullanıp galerinden Twitter/WhatsApp'a atabilirsin.");
@@ -700,7 +698,6 @@
             }
 
             try {
-                // Base64 veriyi gerçek bir dosyaya(File) çeviriyoruz ki WP/IG kabul etsin
                 const blob = await (await fetch(generatedImageData)).blob();
                 const file = new File([blob], 'grid11.jpg', { type: 'image/jpeg' });
 
@@ -716,4 +713,3 @@
     </script>
 </body>
 </html>
-                                                
