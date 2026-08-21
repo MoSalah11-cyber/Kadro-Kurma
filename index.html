@@ -66,10 +66,11 @@
             width: 100%;
             border-radius: 8px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 800;
             cursor: pointer;
             transition: 0.3s;
             font-family: inherit;
+            text-transform: uppercase;
         }
 
         .play-btn:hover { background: #2ecc71; transform: translateY(-2px); }
@@ -83,49 +84,51 @@
             box-sizing: border-box;
         }
 
-        /* --- POSTER (ÇEKİM) ALANI --- */
+        /* --- PREMIUM POSTER (ÇERÇEVE) ALANI --- */
         #capture-area {
-            padding: 20px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #0f2d19 0%, #020604 100%);
-            border: 2px solid #2ecc71;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            padding: 30px 20px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #0a1f12 0%, #020604 100%);
+            border: 3px solid #f1c40f; /* Altın/Premium Çerçeve */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
             position: relative;
         }
 
         .capture-header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(241, 196, 15, 0.3);
         }
 
         .capture-header h2 {
             margin: 0;
-            color: #2ecc71;
-            font-size: 24px;
+            color: #f1c40f;
+            font-size: 26px;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
         .capture-header .score-badge {
             display: inline-block;
             margin-top: 10px;
-            background: rgba(0,0,0,0.6);
-            padding: 6px 15px;
-            border-radius: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 20px;
+            border-radius: 25px;
             font-weight: 800;
-            color: #f1c40f;
-            border: 1px solid rgba(241, 196, 15, 0.3);
-            font-size: 14px;
+            color: #2ecc71;
+            border: 1px solid #2ecc71;
+            font-size: 15px;
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.2);
         }
 
-        /* Cam Efektli Saha */
+        /* Çerçeve İçi Saha */
         .pitch {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.02);
             border-radius: 12px;
-            padding: 20px 10px;
+            padding: 10px;
         }
 
         .row {
@@ -145,7 +148,7 @@
         .slot {
             width: 65px;
             height: 95px;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.6);
             border: 2px dashed rgba(255,255,255,0.3);
             border-radius: 8px;
             display: flex;
@@ -157,13 +160,12 @@
             background-position: center top;
             font-size: 24px;
             color: rgba(255,255,255,0.3);
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
 
         .slot.filled {
-            border: 2px solid #f1c40f;
+            border: 2px solid #2ecc71;
             color: transparent; 
-            box-shadow: 0 5px 15px rgba(241, 196, 15, 0.3);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.2);
         }
 
         .pos-badge {
@@ -174,8 +176,8 @@
             border-radius: 4px;
             margin-top: -12px;
             z-index: 2;
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #2ecc71;
+            border: 1px solid #f1c40f;
+            color: #f1c40f;
         }
 
         .criteria {
@@ -184,28 +186,28 @@
             color: #bdc3c7;
             font-weight: 600;
             line-height: 1.2;
-            cursor: pointer;
             padding: 4px;
-            border-radius: 4px;
-            border: 1px solid transparent;
         }
 
         .player-name {
             font-size: 11px;
             font-weight: 800;
             margin-top: 5px;
-            color: #f1c40f;
+            color: #fff;
             display: none;
+            background: rgba(0,0,0,0.6);
+            padding: 2px 5px;
+            border-radius: 4px;
         }
 
-        /* FİNAL PAYLAŞ BUTONU (Emojisiz, Dümdüz) */
+        /* FİNAL PAYLAŞ BUTONU (Emojisiz, Klas) */
         #final-share-btn {
             display: none;
             width: 100%;
             margin-top: 25px;
             padding: 15px;
-            background: #27ae60;
-            color: white;
+            background: #fff;
+            color: #000;
             border: none;
             border-radius: 8px;
             font-size: 18px;
@@ -213,13 +215,12 @@
             cursor: pointer;
             transition: 0.3s;
             font-family: inherit;
-            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
             text-transform: uppercase;
             letter-spacing: 2px;
         }
 
         #final-share-btn:hover {
-            background: #2ecc71;
+            background: #f1c40f;
             transform: scale(1.02);
         }
 
@@ -229,14 +230,14 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             justify-content: center;
             align-items: center;
             z-index: 10;
         }
 
         #search-modal-content, #result-modal-content {
-            background: #1a251e;
+            background: #111;
             padding: 20px;
             border-radius: 12px;
             width: 90%;
@@ -254,13 +255,13 @@
             font-weight: 800;
         }
 
-        /* PAYLAŞIM SONUÇ MODALI & BUTONLARI */
+        /* PAYLAŞIM EKRANI VE BUTONLARI */
         #generated-image-preview {
             width: 100%;
-            border-radius: 8px;
-            border: 2px solid #2ecc71;
+            border-radius: 12px;
+            border: 2px solid #f1c40f;
             margin: 15px 0;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(241, 196, 15, 0.2);
         }
 
         .social-grid {
@@ -275,25 +276,21 @@
             border: none;
             border-radius: 8px;
             font-weight: 800;
-            font-size: 13px;
+            font-size: 14px;
             cursor: pointer;
             font-family: inherit;
             color: #fff;
             transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
         }
 
-        .btn-download { background: #f39c12; grid-column: span 2; font-size: 15px;}
-        .btn-download:hover { background: #f1c40f; }
+        .btn-download { background: #34495e; grid-column: span 2; font-size: 16px;}
+        .btn-download:hover { background: #2c3e50; }
         
         .btn-wp { background: #25D366; }
         .btn-wp:hover { background: #128C7E; }
         
-        .btn-tw { background: #000000; border: 1px solid #333; }
-        .btn-tw:hover { background: #1da1f2; }
+        .btn-tw { background: #000; border: 1px solid #333; }
+        .btn-tw:hover { background: #222; }
         
         .btn-ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
         .btn-ig:hover { opacity: 0.9; }
@@ -310,7 +307,6 @@
             outline: none;
             background: rgba(0,0,0,0.4);
             color: #fff;
-            transition: 0.2s;
         }
 
         input[type="text"]:focus { border-color: #2ecc71; }
@@ -345,19 +341,19 @@
         }
 
         .close-btn {
-            padding: 10px;
+            padding: 12px;
             width: 100%;
             border: none;
             border-radius: 6px;
             background: transparent;
-            color: #bdc3c7;
+            color: #e74c3c;
             font-family: inherit;
             cursor: pointer;
-            font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.1);
+            font-weight: 800;
+            border: 1px solid #e74c3c;
         }
         
-        .close-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .close-btn:hover { background: #e74c3c; color: #fff; }
 
         @keyframes shake {
             0% { transform: translateX(0); }
@@ -372,14 +368,13 @@
 
     <div id="login-screen">
         <h1>GRID 11</h1>
-        <p style="color: #bdc3c7; font-size: 14px; margin-bottom: 25px;">Futbol hafızanı test et.</p>
         <input type="text" id="nickname-input" placeholder="Nickname girin..." autocomplete="off">
-        <button class="play-btn" onclick="startGame()">Günün Gridini Oyna</button>
+        <button class="play-btn" onclick="startGame()">OYNA</button>
     </div>
 
     <div id="game-container">
         
-        <!-- İŞTE YENİ POSTER ALANI -->
+        <!-- YENİ JİLET GİBİ ÇERÇEVELİ POSTER ALANI -->
         <div id="capture-area">
             <div class="capture-header">
                 <h2 id="capture-title">---'in İlk 11'i</h2>
@@ -426,17 +421,18 @@
     <!-- PAYLAŞIM / İNDİRME MODALI -->
     <div class="modal" id="result-modal">
         <div id="result-modal-content">
-            <h2 style="margin:0; color:#2ecc71; font-weight:800; font-size:20px;">KADRON HAZIR!</h2>
+            <h2 style="margin:0; color:#f1c40f; font-weight:800; font-size:20px; text-transform:uppercase;">Tebrikler!</h2>
             <img id="generated-image-preview" src="" alt="Kadro Görseli">
             
             <div class="social-grid">
-                <button class="social-btn btn-download" onclick="downloadImage()">İndir ⬇️</button>
-                <button class="social-btn btn-wp" onclick="shareToApps()">WhatsApp 💬</button>
-                <button class="social-btn btn-ig" onclick="shareToApps()">Instagram 📸</button>
-                <button class="social-btn btn-tw" onclick="shareToApps()">Twitter (X) 🐦</button>
+                <!-- Tarayıcı kısıtlamalarından dolayı bu butonların hepsi native paylaşım menüsünü açar -->
+                <button class="social-btn btn-wp" onclick="shareToApps()">WhatsApp</button>
+                <button class="social-btn btn-tw" onclick="shareToApps()">Twitter</button>
+                <button class="social-btn btn-ig" onclick="shareToApps()">Instagram</button>
+                <button class="social-btn btn-download" onclick="downloadImage()">Sadece İndir</button>
             </div>
             
-            <button class="close-btn" onclick="closeModal('result-modal')">Vazgeç</button>
+            <button class="close-btn" onclick="closeModal('result-modal')">Kapat</button>
         </div>
     </div>
 
@@ -447,17 +443,14 @@
         let username = "";
         let generatedImageData = "";
 
+        // HATA YAPMADAN TEST EDEBİLMEN İÇİN HER MEVKİYE UYGUN LİSTE
         const dbPlayers = [
             { name: "Dani Osvaldo", pos: "ST", img: "https://cdn.sofifa.net/players/176/993/16_120.png", traits: ["serie_a_3"] },
-            { name: "Mauro Icardi", pos: "ST", img: "https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["gol_400", "psg"] },
-            { name: "Luis Suárez", pos: "ST", img: "https://cdn.sofifa.net/players/176/580/24_120.png", traits: ["gol_400"] },
-            { name: "Mohamed Salah", pos: "ST", img: "https://cdn.sofifa.net/players/209/331/24_120.png", traits: ["gol_400", "premier_lig"] },
-            { name: "Dusan Tadic", pos: "LM", img: "https://cdn.sofifa.net/players/199/434/24_120.png", traits: ["eredivisie"] },
+            { name: "Mauro Icardi", pos: "ST", img: "https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["gol_400"] },
             { name: "Noa Lang", pos: "LM", img: "https://cdn.sofifa.net/players/247/802/24_120.png", traits: ["eredivisie"] },
             { name: "Mario Lemina", pos: "CM", img: "https://cdn.sofifa.net/players/212/883/24_120.png", traits: ["super_lig"] },
             { name: "Gabriel Sara", pos: "CM", img: "https://cdn.sofifa.net/players/247/204/24_120.png", traits: ["brezilya"] },
             { name: "Leroy Sané", pos: "RM", img: "https://cdn.sofifa.net/players/222/492/24_120.png", traits: ["alman"] },
-            { name: "Elvis Manu", pos: "RM", img: "https://cdn.sofifa.net/players/208/093/22_120.png", traits: ["super_lig"] },
             { name: "Jordi Alba", pos: "LB", img: "https://cdn.sofifa.net/players/189/332/24_120.png", traits: ["ispanyol"] },
             { name: "Abdülkerim Bardakçı", pos: "CB", img: "https://cdn.sofifa.net/players/232/730/24_120.png", traits: ["sol_ayak"] },
             { name: "Paolo Maldini", pos: "CB", img: "https://cdn.sofifa.net/players/110/9/09_120.png", traits: ["tek_takim"] },
@@ -492,7 +485,7 @@
         function startGame() {
             const input = document.getElementById("nickname-input").value.trim();
             if(input.length < 3) {
-                alert("En az 3 harfli bir nickname gir dostum.");
+                alert("En az 3 harfli bir nickname gir.");
                 return;
             }
             username = input;
@@ -576,7 +569,7 @@
                 slotBtn.classList.add("filled");
                 slotBtn.innerHTML = "";
                 nameLabel.innerText = player.name;
-                nameLabel.style.display = "block";
+                nameLabel.style.display = "inline-block";
                 
                 filledCount++;
                 closeModal('search-modal');
@@ -597,30 +590,37 @@
         function generateShareImage() {
             const captureArea = document.getElementById("capture-area");
             const shareBtn = document.getElementById("final-share-btn");
-            shareBtn.innerText = "HAZIRLANIYOR...";
+            shareBtn.innerText = "YÜKLENİYOR...";
             
+            // CORS HATASINI ÇÖZEN HAYAT KURTARICI KOD BURADA (useCORS: true)
             html2canvas(captureArea, {
                 backgroundColor: "#020604",
-                scale: 2
+                scale: 2,
+                useCORS: true,
+                allowTaint: true
             }).then(canvas => {
                 generatedImageData = canvas.toDataURL("image/jpeg", 0.9);
                 document.getElementById("generated-image-preview").src = generatedImageData;
                 
                 document.getElementById("result-modal").style.display = "flex";
                 shareBtn.innerText = "PAYLAŞ";
+            }).catch(err => {
+                alert("Fotoğraf oluşturulurken bir hata oluştu: " + err);
+                shareBtn.innerText = "PAYLAŞ";
             });
         }
 
         function downloadImage() {
             const link = document.createElement('a');
-            link.download = `Grid11_${username}.jpg`;
+            link.download = `Grid11_${username}_Skor${score}.jpg`;
             link.href = generatedImageData;
             link.click();
         }
 
+        // TIKLANDIĞINDA TELEFONUN ORİJİNAL PAYLAŞIM EKRANINI AÇAR
         async function shareToApps() {
             if (!navigator.share) {
-                alert("Tarayıcın desteklemiyor reis. Önce 'İndir' butonuna basıp galerinden atabilirsin.");
+                alert("Tarayıcın direkt paylaşımı desteklemiyor reis. 'Sadece İndir' butonuna basıp galerinden atabilirsin.");
                 return;
             }
             try {
