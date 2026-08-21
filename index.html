@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grid 11</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -19,6 +18,7 @@
             min-height: 100vh;
         }
 
+        /* --- GİRİŞ EKRANI --- */
         #login-screen {
             text-align: center;
             background: rgba(15, 45, 25, 0.6);
@@ -73,6 +73,7 @@
 
         .play-btn:hover { background: #2ecc71; transform: translateY(-2px); }
 
+        /* --- ANA OYUN EKRANI --- */
         #game-container {
             display: none;
             width: 100%;
@@ -81,47 +82,35 @@
             box-sizing: border-box;
         }
 
-        /* PREMIUM POSTER (ÇERÇEVE) ALANI */
-        #capture-area {
-            padding: 25px 15px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #0a1f12 0%, #020604 100%);
-            border: 3px solid #2ecc71; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            position: relative;
-        }
-
-        .capture-header {
-            text-align: center;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(46, 204, 113, 0.3);
+            padding: 0 10px;
         }
 
-        .capture-header h2 {
-            margin: 0;
-            color: #fff;
-            font-size: 22px;
+        .user-info {
+            font-size: 16px;
+            color: #2ecc71;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
-        .capture-header .score-badge {
-            display: inline-block;
-            margin-top: 10px;
-            background: #f1c40f;
-            padding: 6px 16px;
-            border-radius: 20px;
+        .score-box {
+            background: rgba(0,0,0,0.5);
+            padding: 8px 16px;
+            border-radius: 8px;
             font-weight: 800;
-            color: #000;
-            font-size: 14px;
+            color: #f1c40f;
+            border: 1px solid rgba(241, 196, 15, 0.3);
         }
 
         .pitch {
             background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 10px 5px;
+            padding: 20px 10px;
         }
 
         .row {
@@ -192,6 +181,7 @@
             border-radius: 4px;
         }
 
+        /* FİNAL PAYLAŞ BUTONU */
         #final-share-btn {
             display: none;
             width: 100%;
@@ -237,21 +227,6 @@
             text-align: center;
         }
 
-        /* PAYLAŞIM EKRANI (TAM EKRANDAN BİR TIK KÜÇÜK) */
-        #result-modal-content {
-            background: #111;
-            padding: 20px;
-            border-radius: 16px;
-            width: 92%;
-            max-width: 450px;
-            max-height: 95vh; /* Ekrana tam sığması için */
-            border: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
         .search-header {
             display: flex;
             justify-content: space-between;
@@ -261,45 +236,64 @@
             font-weight: 800;
         }
 
-        /* OLUŞTURULAN GÖRSELİN BOYUTU */
-        #generated-image-preview {
-            width: 100%;
-            max-height: 55vh; /* Görselin ekranı taşırmasını engeller */
-            object-fit: contain;
-            border-radius: 12px;
-            border: 2px solid #2ecc71;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-        }
-
-        .social-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        .social-btn {
-            padding: 12px;
+        /* YENİ JİLET GİBİ SS (EKRAN GÖRÜNTÜSÜ) ÇERÇEVESİ */
+        #result-modal-content {
+            background: transparent;
+            padding: 0;
             border: none;
-            border-radius: 8px;
-            font-weight: 800;
-            font-size: 14px;
-            cursor: pointer;
-            font-family: inherit;
-            color: #fff;
-            transition: 0.2s;
+            width: 92%;
+            max-width: 450px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
         }
 
-        .btn-download { background: #34495e; grid-column: span 2; font-size: 16px;}
-        .btn-tw { background: #000; border: 1px solid #333; }
-        .btn-ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
-        .btn-wp { background: #25D366; grid-column: span 2;}
+        #ss-card {
+            background: linear-gradient(135deg, #0a1f12 0%, #020604 100%);
+            border: 3px solid #2ecc71;
+            border-radius: 16px;
+            padding: 25px 10px;
+            width: 100%;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+            pointer-events: none; /* SS alırken yanlışlıkla tıklanmasın diye */
+        }
 
+        #ss-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        #ss-title {
+            margin: 0;
+            color: #fff;
+            font-size: 22px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #ss-score {
+            display: inline-block;
+            margin-top: 10px;
+            background: #f1c40f;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 800;
+            color: #000;
+            font-size: 14px;
+        }
+
+        .ss-info {
+            color: #bdc3c7;
+            font-size: 14px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        /* ORTAK ARAMA STİLLERİ */
         input[type="text"] {
             width: 100%;
             padding: 12px;
@@ -349,17 +343,16 @@
             padding: 12px;
             width: 100%;
             border: none;
-            border-radius: 6px;
-            background: transparent;
-            color: #bdc3c7;
+            border-radius: 8px;
+            background: #e74c3c;
+            color: #fff;
             font-family: inherit;
             cursor: pointer;
             font-weight: 800;
-            border: 1px solid rgba(255,255,255,0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
-        .close-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-
         @keyframes shake {
             0% { transform: translateX(0); }
             25% { transform: translateX(-6px); }
@@ -379,38 +372,37 @@
 
     <div id="game-container">
         
-        <div id="capture-area">
-            <div class="capture-header">
-                <h2 id="capture-title">---'in İlk 11'i</h2>
-                <div class="score-badge">Skor: <span id="scoreVal">0</span></div>
-            </div>
+        <div class="header">
+            <div class="user-info" id="display-nickname">---</div>
+            <div class="score-box">Skor: <span id="scoreVal">0</span></div>
+        </div>
 
-            <div class="pitch" id="pitch">
-                <div class="row">
-                    <div class="slot-container" id="slot-st-l"></div>
-                    <div class="slot-container" id="slot-st-r"></div>
-                </div>
-                <div class="row">
-                    <div class="slot-container" id="slot-lm"></div>
-                    <div class="slot-container" id="slot-cm-l"></div>
-                    <div class="slot-container" id="slot-cm-r"></div>
-                    <div class="slot-container" id="slot-rm"></div>
-                </div>
-                <div class="row">
-                    <div class="slot-container" id="slot-lb"></div>
-                    <div class="slot-container" id="slot-cb-l"></div>
-                    <div class="slot-container" id="slot-cb-r"></div>
-                    <div class="slot-container" id="slot-rb"></div>
-                </div>
-                <div class="row">
-                    <div class="slot-container" id="slot-gk"></div>
-                </div>
+        <div class="pitch" id="pitch">
+            <div class="row">
+                <div class="slot-container" id="slot-st-l"></div>
+                <div class="slot-container" id="slot-st-r"></div>
+            </div>
+            <div class="row">
+                <div class="slot-container" id="slot-lm"></div>
+                <div class="slot-container" id="slot-cm-l"></div>
+                <div class="slot-container" id="slot-cm-r"></div>
+                <div class="slot-container" id="slot-rm"></div>
+            </div>
+            <div class="row">
+                <div class="slot-container" id="slot-lb"></div>
+                <div class="slot-container" id="slot-cb-l"></div>
+                <div class="slot-container" id="slot-cb-r"></div>
+                <div class="slot-container" id="slot-rb"></div>
+            </div>
+            <div class="row">
+                <div class="slot-container" id="slot-gk"></div>
             </div>
         </div>
 
-        <button id="final-share-btn" onclick="generateShareImage()">PAYLAŞ</button>
+        <button id="final-share-btn" onclick="showShareScreen()">PAYLAŞ 📸</button>
     </div>
 
+    <!-- ARAMA MODALI -->
     <div class="modal" id="search-modal">
         <div id="search-modal-content">
             <div class="search-header">
@@ -422,19 +414,23 @@
         </div>
     </div>
 
-    <!-- YENİ BOYUTLANDIRILMIŞ PAYLAŞIM EKRANI -->
+    <!-- YENİ SS (EKRAN GÖRÜNTÜSÜ) MODALI -->
     <div class="modal" id="result-modal">
         <div id="result-modal-content">
-            <img id="generated-image-preview" src="" alt="Kadro Görseli">
             
-            <div class="social-grid">
-                <button class="social-btn btn-tw" onclick="shareToApps()">Twitter</button>
-                <button class="social-btn btn-ig" onclick="shareToApps()">Instagram</button>
-                <button class="social-btn btn-wp" onclick="shareToApps()">WhatsApp</button>
-                <button class="social-btn btn-download" onclick="downloadImage()">Resmi İndir</button>
+            <!-- Screenshot Alınacak Jilet Çerçeve -->
+            <div id="ss-card">
+                <div id="ss-header">
+                    <h2 id="ss-title">---'in İlk 11'i</h2>
+                    <div id="ss-score">Skor: 0</div>
+                </div>
+                <!-- Sahanın Kopyası Buraya Gelecek -->
+                <div id="ss-pitch-container"></div>
             </div>
+
+            <div class="ss-info">Çerçevenin Ekran Görüntüsünü (SS) Alabilirsin!</div>
+            <button class="close-btn" onclick="closeModal('result-modal')">KAPAT</button>
             
-            <button class="close-btn" onclick="closeModal('result-modal')">Kapat</button>
         </div>
     </div>
 
@@ -443,7 +439,6 @@
         let filledCount = 0;
         let activeSlotId = null;
         let username = "";
-        let generatedImageData = "";
 
         const dbPlayers = [
             { name: "Dani Osvaldo", pos: "ST", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/176/993/16_120.png", traits: ["serie_a_3"] },
@@ -491,7 +486,7 @@
             }
             username = input;
             
-            document.getElementById("capture-title").innerText = `${username}'in İlk 11'i`;
+            document.getElementById("display-nickname").innerText = username;
             
             document.getElementById("login-screen").style.display = "none";
             document.getElementById("game-container").style.display = "block";
@@ -587,52 +582,18 @@
             }
         }
 
-        function generateShareImage() {
-            const captureArea = document.getElementById("capture-area");
-            const shareBtn = document.getElementById("final-share-btn");
-            shareBtn.innerText = "YÜKLENİYOR...";
+        // KÜTÜPHANELERE İHTİYAÇ DUYMAYAN, EKRAN GÖRÜNTÜSÜ ALINMALIK ÇERÇEVEYİ AÇAN FONKSİYON
+        function showShareScreen() {
+            // İsim ve skoru karta yazdır
+            document.getElementById("ss-title").innerText = `${username}'in İlk 11'i`;
+            document.getElementById("ss-score").innerText = `Skor: ${score}`;
             
-            // DONMA SORUNUNU ÖNLEYEN GÜVENLİ CANVAS YAKALAMA
-            html2canvas(captureArea, {
-                backgroundColor: "#0a1f12",
-                scale: 2,
-                useCORS: true
-            }).then(canvas => {
-                generatedImageData = canvas.toDataURL("image/jpeg", 0.9);
-                document.getElementById("generated-image-preview").src = generatedImageData;
-                
-                document.getElementById("result-modal").style.display = "flex";
-                shareBtn.innerText = "PAYLAŞ";
-            }).catch(err => {
-                alert("Fotoğraf oluşturulurken bir hata oluştu, lütfen sayfayı yenileyip tekrar dene.");
-                shareBtn.innerText = "PAYLAŞ";
-            });
-        }
-
-        function downloadImage() {
-            const link = document.createElement('a');
-            link.download = `Grid11_${username}_Skor${score}.jpg`;
-            link.href = generatedImageData;
-            link.click();
-        }
-
-        async function shareToApps() {
-            if (!navigator.share) {
-                alert("Tarayıcın desteklemiyor dayko. 'Resmi İndir' butonuna basıp galerinden paylaşabilirsin.");
-                return;
-            }
-            try {
-                const blob = await (await fetch(generatedImageData)).blob();
-                const file = new File([blob], 'grid11.jpg', { type: 'image/jpeg' });
-
-                await navigator.share({
-                    title: 'Grid 11 Kadrom',
-                    text: `Bugünkü Grid 11'i ${score} skorla bitirdim!`,
-                    files: [file]
-                });
-            } catch (error) {
-                console.log("Paylaşım iptal edildi.");
-            }
+            // Sahadaki dizilişin (resimlerin) birebir aynısını kopyalayıp SS kartının içine yapıştır
+            const originalPitch = document.getElementById("pitch");
+            document.getElementById("ss-pitch-container").innerHTML = originalPitch.innerHTML;
+            
+            // Çerçeve menüsünü aç
+            document.getElementById("result-modal").style.display = "flex";
         }
     </script>
 </body>
