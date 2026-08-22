@@ -253,7 +253,7 @@
             font-weight: 800;
         }
 
-        /* YENİ KARTPOSTAL (SS) EKRANI */
+        /* YENİ KÜÇÜK, MOTİFLİ KARTPOSTAL (SS) EKRANI */
         #result-modal-content {
             background: transparent;
             padding: 0;
@@ -265,25 +265,37 @@
             justify-content: center;
         }
 
+        /* Dış Kalın Çerçeve ve Türk Motifleri */
         #ss-card {
-            background: linear-gradient(135deg, #0a1f12 0%, #020604 100%);
+            background-color: #0b1c11; /* Ağır, koyu yeşil çerçeve tabanı */
+            /* Göze batmayan, çok hafif opaklıkta geleneksel geometrik yıldız/kilim motifi */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath fill='%23f1c40f' fill-opacity='0.06' d='M13.99 9.25l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zm0-8.5l2.6 2.6-2.6 2.6-2.6-2.6 2.6-2.6zM0 13.99l2.6-2.6 2.6 2.6-2.6 2.6L0 13.99zm28 0l-2.6-2.6-2.6 2.6 2.6 2.6 2.6-2.6zM13.99 28l-2.6-2.6 2.6-2.6 2.6 2.6-2.6 2.6zM4.6 4.6l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zm18.8 0l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zM4.6 23.4l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zm18.8 0l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3z'/%3E%3C/svg%3E");
+            border: 2px solid #2ecc71; /* İnce bir jilet dış hat */
             border-radius: 12px;
-            padding: 20px 10px;
-            width: 88%;
-            max-width: 400px;
+            padding: 22px; /* Kalın çerçeve payı */
+            width: 82%; /* Eskisinden daha küçük, tam ekran değil */
+            max-width: 320px;
             box-shadow: 0 25px 60px rgba(0,0,0,0.9);
             pointer-events: none;
-            border: none;
             
             /* Fotoğraf Efekti - İlk Başta Görünmez ve Küçüktür */
-            transform: scale(0.7) rotate(-10deg);
+            transform: scale(0.6) rotate(-10deg);
             opacity: 0;
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
+        /* İç Saha Alanı (Çerçevenin İçi) */
+        #ss-inner {
+            background: linear-gradient(135deg, #0a1f12 0%, #020604 100%);
+            border-radius: 8px;
+            padding: 15px 5px;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
         /* Modal Açıldığında Kartpostal Çapraz Olarak Ekrana Oturur */
         #result-modal.show #ss-card {
-            transform: scale(0.95) rotate(3deg); /* Kartpostal eğikliği */
+            transform: scale(0.85) rotate(3deg); /* Daha küçük, kartpostal kıvamı */
             opacity: 1;
         }
 
@@ -443,11 +455,13 @@
         <div id="result-modal-content">
             
             <div id="ss-card">
-                <div id="ss-header">
-                    <h2 id="ss-title">---'in İlk 11'i</h2>
-                    <div id="ss-score">Skor: 0</div>
+                <div id="ss-inner">
+                    <div id="ss-header">
+                        <h2 id="ss-title">---'in İlk 11'i</h2>
+                        <div id="ss-score">Skor: 0</div>
+                    </div>
+                    <div id="ss-pitch-container"></div>
                 </div>
-                <div id="ss-pitch-container"></div>
             </div>
 
             <button class="close-btn" onclick="closeModal('result-modal')">KAPAT</button>
@@ -611,28 +625,22 @@
         }
 
         function showShareScreen() {
-            // 1. Flaş efektini patlat
             const flash = document.getElementById("flash-effect");
             flash.classList.add("flash-active");
             
-            // Flaşın sönmesi için ufak gecikme
             setTimeout(() => {
                 flash.classList.remove("flash-active");
             }, 80);
 
-            // 2. İsim ve skoru karta yazdır
             document.getElementById("ss-title").innerText = `${username}'in İlk 11'i`;
             document.getElementById("ss-score").innerText = `Skor: ${score}`;
             
-            // 3. Sahadaki dizilişi birebir kopyala
             const originalPitch = document.getElementById("pitch");
             document.getElementById("ss-pitch-container").innerHTML = originalPitch.innerHTML;
             
-            // 4. Kartpostal menüsünü aç
             const modal = document.getElementById("result-modal");
             modal.style.display = "flex";
             
-            // CSS animasyonunu tetiklemek için ufak bekleme
             setTimeout(() => {
                 modal.classList.add("show");
             }, 50);
