@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grid 11</title>
-    <!-- Piksel (VT323) ve Normal (Poppins) fontlar eklendi -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=VT323&display=swap" rel="stylesheet">
     <style>
         body {
-            /* Tüm site piksel fontuyla çalışıyor */
             font-family: 'VT323', monospace;
             margin: 0;
             padding: 0;
@@ -20,7 +18,6 @@
             min-height: 100vh;
         }
 
-        /* --- FLAŞ EFEKTİ --- */
         #flash-effect {
             position: fixed;
             top: 0; left: 0;
@@ -37,7 +34,6 @@
             transition: none !important;
         }
 
-        /* --- GİRİŞ EKRANI --- */
         #login-screen {
             text-align: center;
             background: rgba(15, 45, 25, 0.6);
@@ -54,7 +50,7 @@
             margin-top: 0;
             color: #2ecc71;
             letter-spacing: 2px;
-            font-size: 46px; /* Piksel font büyük olmalı */
+            font-size: 46px;
             font-weight: normal;
         }
 
@@ -91,12 +87,11 @@
 
         .play-btn:hover { background: #2ecc71; transform: translateY(-2px); }
 
-        /* --- ANA OYUN EKRANI --- */
         #game-container {
             display: none;
             width: 100%;
             max-width: 600px;
-            padding: 15px; /* Daraltıldı */
+            padding: 15px;
             box-sizing: border-box;
         }
 
@@ -104,7 +99,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px; /* Daraltıldı */
+            margin-bottom: 15px;
             padding: 0 10px;
         }
 
@@ -123,31 +118,30 @@
             font-size: 20px;
         }
 
-        /* SAHA (BOYLAMASINA KÜÇÜLTÜLDÜ) */
         .pitch {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 12px 5px; /* Üst-alt boşluklar tıraşlandı */
+            padding: 12px 5px;
         }
 
         .row {
             display: flex;
             justify-content: space-evenly;
-            margin-bottom: 10px; /* Eski 20px boşluklar 10px'e düştü */
+            margin-bottom: 10px;
         }
 
         .slot-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 75px; /* Hafif daraltıldı */
+            width: 75px;
             text-align: center;
         }
 
         .slot {
             width: 58px;
-            height: 74px; /* Kartların dikey boyu kısaltıldı */
+            height: 74px;
             background: rgba(0, 0, 0, 0.6);
             border: 2px dashed rgba(255,255,255,0.3);
             border-radius: 8px;
@@ -179,14 +173,13 @@
         }
 
         .criteria {
-            font-size: 12px; /* Piksel font için okunabilir boyut */
+            font-size: 12px;
             margin-top: 4px;
             color: #bdc3c7;
             line-height: 1;
             padding: 2px;
         }
 
-        /* SADECE FUTBOLCU İSİMLERİ POPPINS (MODERN) FONT */
         .player-name {
             font-family: 'Poppins', sans-serif;
             font-size: 10px;
@@ -199,7 +192,6 @@
             border-radius: 4px;
         }
 
-        /* FİNAL PAYLAŞ BUTONU */
         #final-share-btn {
             display: none;
             width: 100%;
@@ -222,7 +214,6 @@
             color: #fff;
         }
 
-        /* --- MODALLAR --- */
         .modal {
             display: none;
             position: fixed;
@@ -253,7 +244,6 @@
             font-size: 22px;
         }
 
-        /* YENİ PRES YEMİŞ KARTPOSTAL (SS) EKRANI */
         #result-modal-content {
             background: transparent;
             padding: 0;
@@ -265,34 +255,29 @@
             justify-content: center;
         }
 
-        /* Dış Kalın Çerçeve ve Türk Motifleri Aynen Kaldı */
         #ss-card {
             background-color: #0b1c11; 
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath fill='%23f1c40f' fill-opacity='0.06' d='M13.99 9.25l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zm0-8.5l2.6 2.6-2.6 2.6-2.6-2.6 2.6-2.6zM0 13.99l2.6-2.6 2.6 2.6-2.6 2.6L0 13.99zm28 0l-2.6-2.6-2.6 2.6 2.6 2.6 2.6-2.6zM13.99 28l-2.6-2.6 2.6-2.6 2.6 2.6-2.6 2.6zM4.6 4.6l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zm18.8 0l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zM4.6 23.4l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zm18.8 0l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3z'/%3E%3C/svg%3E");
             border: 2px solid #2ecc71; 
             border-radius: 12px;
-            padding: 16px; /* Kalın çerçeve payı korundu */
+            padding: 16px;
             width: 85%; 
-            max-width: 350px; /* Boylamasına daha kompakt */
+            max-width: 350px;
             box-shadow: 0 25px 60px rgba(0,0,0,0.9);
             pointer-events: none;
-            
-            /* Fotoğraf Efekti - İlk Başta Görünmez ve Küçüktür */
             transform: scale(0.6) rotate(-10deg);
             opacity: 0;
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* İç Saha Alanı (Çerçevenin İçi) */
         #ss-inner {
             background: linear-gradient(135deg, #0a1f12 0%, #020604 100%);
             border-radius: 8px;
-            padding: 10px 5px; /* Boşluklar çok daha sıkı */
+            padding: 10px 5px;
             border: 1px solid rgba(46, 204, 113, 0.3);
             box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
         }
 
-        /* Modal Açıldığında Kartpostal Çapraz Olarak Ekrana Oturur */
         #result-modal.show #ss-card {
             transform: scale(0.90) rotate(3deg);
             opacity: 1;
@@ -300,8 +285,8 @@
 
         #ss-header {
             text-align: center;
-            margin-bottom: 10px; /* Daraltıldı */
-            padding-bottom: 10px; /* Daraltıldı */
+            margin-bottom: 10px;
+            padding-bottom: 10px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -323,7 +308,6 @@
             font-size: 18px;
         }
 
-        /* ORTAK ARAMA STİLLERİ */
         input[type="text"] {
             width: 100%;
             padding: 12px;
@@ -357,7 +341,7 @@
             padding: 8px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-family: 'Poppins', sans-serif; /* İsimler listelerde de normal */
+            font-family: 'Poppins', sans-serif;
             font-weight: 600;
             font-size: 13px;
         }
@@ -511,6 +495,18 @@
                         .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
+        // YENİ: Sayfa açıldığında hafızayı kontrol eden fonksiyon
+        window.onload = () => {
+            const savedName = localStorage.getItem("grid11_username");
+            if (savedName) {
+                username = savedName;
+                document.getElementById("display-nickname").innerText = username;
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("game-container").style.display = "block";
+                renderPitch();
+            }
+        };
+
         function startGame() {
             const input = document.getElementById("nickname-input").value.trim();
             if(input.length < 3) {
@@ -518,6 +514,9 @@
                 return;
             }
             username = input;
+            
+            // YENİ: Nickname'i tarayıcıya kaydet
+            localStorage.setItem("grid11_username", username);
             
             document.getElementById("display-nickname").innerText = username;
             
