@@ -397,27 +397,8 @@
             <div class="score-box">Skor: <span id="scoreVal">0</span></div>
         </div>
 
-        <div class="pitch" id="pitch">
-            <div class="row">
-                <div class="slot-container" id="slot-st-l"></div>
-                <div class="slot-container" id="slot-st-r"></div>
-            </div>
-            <div class="row">
-                <div class="slot-container" id="slot-lm"></div>
-                <div class="slot-container" id="slot-cm-l"></div>
-                <div class="slot-container" id="slot-cm-r"></div>
-                <div class="slot-container" id="slot-rm"></div>
-            </div>
-            <div class="row">
-                <div class="slot-container" id="slot-lb"></div>
-                <div class="slot-container" id="slot-cb-l"></div>
-                <div class="slot-container" id="slot-cb-r"></div>
-                <div class="slot-container" id="slot-rb"></div>
-            </div>
-            <div class="row">
-                <div class="slot-container" id="slot-gk"></div>
-            </div>
-        </div>
+        <!-- Saha artık JavaScript tarafından rastgele dizilişle doldurulacak -->
+        <div class="pitch" id="pitch"></div>
 
         <button id="final-share-btn" onclick="showShareScreen()">PAYLAŞ</button>
     </div>
@@ -425,7 +406,7 @@
     <div class="modal" id="search-modal">
         <div id="search-modal-content">
             <div class="search-header">
-                <span id="search-pos-title">ST Aranıyor</span>
+                <span id="search-pos-title">ARANIYOR</span>
                 <span style="cursor: pointer;" onclick="closeModal('search-modal')">X</span>
             </div>
             <input type="text" id="searchInput" placeholder="Futbolcu ara..." autocomplete="off">
@@ -435,7 +416,6 @@
 
     <div class="modal" id="result-modal">
         <div id="result-modal-content">
-            
             <div id="ss-card">
                 <div id="ss-inner">
                     <div id="ss-header">
@@ -445,9 +425,7 @@
                     <div id="ss-pitch-container"></div>
                 </div>
             </div>
-
             <button class="close-btn" onclick="closeModal('result-modal')">KAPAT</button>
-            
         </div>
     </div>
 
@@ -456,33 +434,193 @@
         let filledCount = 0;
         let activeSlotId = null;
         let username = "";
+        
+        let dailyFormationLayout = [];
+        let todayGrid = {};
 
+        // TEST VERİTABANI (Daha sonra gerçek verilerle değişecek)
         const dbPlayers = [
             { name: "Dani Osvaldo", pos: "ST", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/176/993/16_120.png", traits: ["serie_a_3"] },
-            { name: "Mauro Icardi", pos: "ST", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["gol_400", "psg"] },
+            { name: "Mauro Icardi", pos: "ST", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["gol_400", "psg", "super_lig"] },
             { name: "Noa Lang", pos: "LM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/247/802/24_120.png", traits: ["eredivisie"] },
             { name: "Mario Lemina", pos: "CM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/212/883/24_120.png", traits: ["super_lig"] },
             { name: "Gabriel Sara", pos: "CM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/247/204/24_120.png", traits: ["brezilya"] },
-            { name: "Leroy Sané", pos: "RM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/222/492/24_120.png", traits: ["alman"] },
-            { name: "Jordi Alba", pos: "LB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/189/332/24_120.png", traits: ["ispanyol"] },
-            { name: "Abdülkerim Bardakçı", pos: "CB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/232/730/24_120.png", traits: ["sol_ayak"] },
+            { name: "Leroy Sané", pos: "RM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/222/492/24_120.png", traits: ["almanya"] },
+            { name: "Jordi Alba", pos: "LB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/189/332/24_120.png", traits: ["ispanya"] },
+            { name: "Abdülkerim Bardakçı", pos: "CB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/232/730/24_120.png", traits: ["turkiye", "super_lig"] },
             { name: "Paolo Maldini", pos: "CB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/110/9/09_120.png", traits: ["tek_takim"] },
-            { name: "Kyle Walker", pos: "RB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/188/350/24_120.png", traits: ["ingiliz"] },
-            { name: "Gregor Kobel", pos: "GK", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/234/396/24_120.png", traits: ["bundesliga"] }
+            { name: "Kyle Walker", pos: "RB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/188/350/24_120.png", traits: ["ingiltere"] },
+            { name: "Gregor Kobel", pos: "GK", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/234/396/24_120.png", traits: ["5_sezon_bundesliga"] }
         ];
 
-        const todayGrid = {
-            "slot-st-l": { pos: "ST", criteriaText: "Serie A'da 3+ takım", reqTrait: "serie_a_3" },
-            "slot-st-r": { pos: "ST", criteriaText: "400+ Kariyer Golü", reqTrait: "gol_400" },
-            "slot-lm": { pos: "LM", criteriaText: "Eredivisie Oynamış", reqTrait: "eredivisie" },
-            "slot-cm-l": { pos: "CM", criteriaText: "Süper Lig Oynamış", reqTrait: "super_lig" },
-            "slot-cm-r": { pos: "CM", criteriaText: "Brezilyalı", reqTrait: "brezilya" },
-            "slot-rm": { pos: "RM", criteriaText: "Alman Oyuncu", reqTrait: "alman" },
-            "slot-lb": { pos: "LB", criteriaText: "İspanyol", reqTrait: "ispanyol" },
-            "slot-cb-l": { pos: "CB", criteriaText: "Sol Ayaklı Stoper", reqTrait: "sol_ayak" },
-            "slot-cb-r": { pos: "CB", criteriaText: "Tek Takım Efsanesi", reqTrait: "tek_takim" },
-            "slot-rb": { pos: "RB", criteriaText: "İngiliz Bek", reqTrait: "ingiliz" },
-            "slot-gk": { pos: "GK", criteriaText: "Bundesliga Eldiveni", reqTrait: "bundesliga" }
+        // DİZİLİŞ HAVUZU
+        const dizilisler = {
+            "433": [["GK"], ["LB", "CB", "CB", "RB"], ["CM", "CM", "CM"], ["LM", "ST", "RM"]],
+            "4231": [["GK"], ["LB", "CB", "CB", "RB"], ["CM", "CM"], ["LM", "CM", "RM"], ["ST"]],
+            "442": [["GK"], ["LB", "CB", "CB", "RB"], ["LM", "CM", "CM", "RM"], ["ST", "ST"]],
+            "451": [["GK"], ["LB", "CB", "CB", "RB"], ["LM", "CM", "CM", "CM", "RM"], ["ST"]],
+            "460": [["GK"], ["LB", "CB", "CB", "RB"], ["LM", "CM", "CM", "RM"], ["CM", "CM"]],
+            "343": [["GK"], ["CB", "CB", "CB"], ["LM", "CM", "CM", "RM"], ["LM", "ST", "RM"]],
+            "352": [["GK"], ["CB", "CB", "CB"], ["LM", "CM", "CM", "CM", "RM"], ["ST", "ST"]],
+            "541": [["GK"], ["LB", "CB", "CB", "CB", "RB"], ["LM", "CM", "CM", "RM"], ["ST"]],
+            "532": [["GK"], ["LB", "CB", "CB", "CB", "RB"], ["CM", "CM", "CM"], ["ST", "ST"]]
+        };
+
+        // KRİTER HAVUZU (Tüm Verdiğin Veriler Eksiksiz)
+        const kriterler = {
+            GK: [
+                { text: "3'ten Fazla Gol Atmış", trait: "gk_3_gol" },
+                { text: "Altın Eldiven Kazanmış", trait: "altin_eldiven" },
+                { text: "190cm'den Kısa Boylu", trait: "boy_kisa_190" }
+            ],
+            FB: [
+                { text: "5'ten Fazla Kırmızı Kart Görmüş", trait: "fb_5_kirmizi" }
+            ],
+            CB: [
+                { text: "7'den Fazla Kırmızı Kart Görmüş", trait: "cb_7_kirmizi" },
+                { text: "190cm'den Uzun Boylu", trait: "boy_uzun_190" }
+            ],
+            CM: [
+                { text: "Ballon d'Or Kazanmış", trait: "ballondor" }
+            ],
+            WING: [
+                { text: "Ballon d'Or Kazanmış", trait: "ballondor" },
+                { text: "200'den Fazla Asist Yapmış", trait: "asist_200" },
+                { text: "2+ Asist Krallığı", trait: "asist_kral_2" }
+            ],
+            ST: [
+                { text: "400+ Gol", trait: "gol_400" },
+                { text: "200+ Asist", trait: "asist_200" },
+                { text: "Altın Ayakkabı Kazanmış", trait: "altin_ayakkabi" },
+                { text: "3+ Gol Krallığı", trait: "gol_krali_3" },
+                { text: "UCL'de 30+ Gol", trait: "ucl_30_gol" },
+                { text: "50+ Kafa Golü", trait: "kafa_golu_50" },
+                { text: "4 Büyükler Dışı Süper Lig Gol Kralı", trait: "anadolu_gol_krali" }
+            ],
+            GENEL: [
+                { text: "3+ UCL Şampiyonluğu", trait: "ucl_3" },
+                { text: "Dünya Kupası Kazanmış", trait: "wc_winner" },
+                { text: "Kariyer Boyu Tek Takım", trait: "tek_takim" },
+                { text: "5 Büyük Ligin En Az 3'ünde Oynamış", trait: "big_5_3_lig" },
+                { text: "5 Büyük Ligde Hiç Oynamamış", trait: "big_5_yok" },
+                { text: "Süper Lig'de Oynamış", trait: "super_lig" },
+                { text: "Türkiye'de 3+ Takımda Oynamış", trait: "tr_3_takim" },
+                { text: "45 İle 60 Yaş Arası", trait: "yas_45_60" },
+                { text: "23 Ve Altında Yaş", trait: "yas_23_alt" },
+                { text: "Güney Amerika Kulübünde Oynamış", trait: "sa_kulup" },
+                { text: "Asyalı", trait: "asyali" },
+                { text: "Avrupalı", trait: "avrupali" },
+                { text: "Afrikalı", trait: "afrikali" },
+                { text: "Güney Amerikalı", trait: "guney_amerikali" },
+                { text: "Kuzey Amerikalı", trait: "kuzey_amerikali" },
+                { text: "Bundesliga'da 5+ Sezon Oynamış", trait: "5_sezon_bundesliga" },
+                { text: "Premier Lig'de 5+ Sezon Oynamış", trait: "5_sezon_pl" },
+                { text: "Serie A'da 5+ Sezon Oynamış", trait: "5_sezon_serie_a" },
+                { text: "Ligue 1'de 5+ Sezon Oynamış", trait: "5_sezon_ligue1" },
+                { text: "La Liga'da 5+ Sezon Oynamış", trait: "5_sezon_laliga" },
+                { text: "Süper Lig'de 5+ Sezon Oynamış", trait: "5_sezon_sl" },
+                { text: "TFF 1. Lig'de 5+ Sezon Oynamış", trait: "5_sezon_tff1" },
+                { text: "Milli Takımla 100+ Maç", trait: "milli_100" },
+                { text: "5+ Lig Kupası", trait: "kupa_5" },
+                { text: "ZTK Kazanmış", trait: "ztk_winner" },
+                { text: "60 Yaş Ve Üstü", trait: "yas_60_ust" },
+                { text: "8+ Takımda Oynamış", trait: "takim_8_ust" },
+                { text: "Serie A'da 3+ Takımda Oynamış", trait: "serie_a_3" },
+                { text: "Premier Lig'de 3+ Takımda Oynamış", trait: "pl_3" },
+                { text: "Brezilyalı", trait: "brezilya" },
+                { text: "Belçikalı", trait: "belcika" },
+                { text: "Hollandalı", trait: "hollanda" },
+                { text: "Alman", trait: "almanya" },
+                { text: "Fransız", trait: "fransa" },
+                { text: "İngiliz", trait: "ingiltere" },
+                { text: "İspanyol", trait: "ispanya" },
+                { text: "İtalyan", trait: "italya" },
+                { text: "Portekizli", trait: "portekiz" },
+                { text: "Türk", trait: "turkiye" },
+                { text: "Arjantinli", trait: "arjantin" },
+                { text: "Uruguaylı", trait: "uruguay" },
+                { text: "Nijeryalı", trait: "nijerya" },
+                { text: "Fildişi Sahilli", trait: "fildisi" },
+                { text: "Ganalı", trait: "gana" },
+                { text: "Senegalli", trait: "senegal" },
+                { text: "Milli Takımda Hiç Oynamamış", trait: "milli_yok" },
+                { text: "Max Piyasa Değeri 75M Ve Üzeri", trait: "pd_75_ust" },
+                { text: "Max Piyasa Değeri 75M Altında", trait: "pd_75_alt" }
+            ]
+        };
+
+        // GÜNLÜK TOHUM (SEED) ÜRETİCİSİ - Her gün 00:00'da sıfırlanır
+        function mulberry32(a) {
+            return function() {
+              var t = a += 0x6D2B79F5;
+              t = Math.imul(t ^ t >>> 15, t | 1);
+              t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+              return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+
+        function generateDailyGrid() {
+            const today = new Date();
+            const dateString = today.getFullYear() + "" + today.getMonth() + "" + today.getDate();
+            const rnd = mulberry32(parseInt(dateString));
+
+            // Rastgele Diziliş Seç
+            const formKeys = Object.keys(dizilisler);
+            const selKey = formKeys[Math.floor(rnd() * formKeys.length)];
+            dailyFormationLayout = dizilisler[selKey];
+
+            const usedTraits = new Set();
+            let slotIndex = 0;
+            todayGrid = {};
+
+            dailyFormationLayout.forEach(rowArr => {
+                rowArr.forEach(pos => {
+                    let pool = [];
+                    if(pos === 'GK') pool = kriterler.GK;
+                    else if(['LB','RB'].includes(pos)) pool = kriterler.FB;
+                    else if(pos === 'CB') pool = kriterler.CB;
+                    else if(pos === 'CM') pool = kriterler.CM;
+                    else if(['LM','RM'].includes(pos)) pool = kriterler.WING;
+                    else if(pos === 'ST') pool = kriterler.ST;
+
+                    let selectedCriterion = null;
+                    let attempts = 0;
+                    
+                    while(attempts < 200) {
+                        const useGeneral = (rnd() > 0.4); // %60 İhtimalle Genel Kriter
+                        const currentPool = (useGeneral || pool.length === 0) ? kriterler.GENEL : pool;
+                        
+                        selectedCriterion = currentPool[Math.floor(rnd() * currentPool.length)];
+                        
+                        if(!usedTraits.has(selectedCriterion.trait)) {
+                            usedTraits.add(selectedCriterion.trait);
+                            break;
+                        }
+                        attempts++;
+                    }
+
+                    todayGrid[`slot-${slotIndex}`] = {
+                        pos: pos,
+                        criteriaText: selectedCriterion.text,
+                        reqTrait: selectedCriterion.trait
+                    };
+                    slotIndex++;
+                });
+            });
+        }
+
+        // SAYFA YÜKLENDİĞİNDE GÜNLÜK GRİDİ OLUŞTUR VE HAFIZAYA BAK
+        window.onload = () => {
+            generateDailyGrid(); // Rastgelelik çalıştırılır
+            
+            const savedName = localStorage.getItem("grid11_username");
+            if (savedName) {
+                username = savedName;
+                document.getElementById("display-nickname").innerText = username;
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("game-container").style.display = "block";
+                renderPitch();
+            }
         };
 
         function normalizeMetin(metin) {
@@ -495,18 +633,6 @@
                         .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
-        // YENİ: Sayfa açıldığında hafızayı kontrol eden fonksiyon
-        window.onload = () => {
-            const savedName = localStorage.getItem("grid11_username");
-            if (savedName) {
-                username = savedName;
-                document.getElementById("display-nickname").innerText = username;
-                document.getElementById("login-screen").style.display = "none";
-                document.getElementById("game-container").style.display = "block";
-                renderPitch();
-            }
-        };
-
         function startGame() {
             const input = document.getElementById("nickname-input").value.trim();
             if(input.length < 3) {
@@ -515,7 +641,6 @@
             }
             username = input;
             
-            // YENİ: Nickname'i tarayıcıya kaydet
             localStorage.setItem("grid11_username", username);
             
             document.getElementById("display-nickname").innerText = username;
@@ -526,17 +651,32 @@
             renderPitch();
         }
 
+        // SAHAYI ARTIK HTML'DEN DEĞİL, JS İLE RASTGELE DİZİLİŞE GÖRE ÇİZİYORUZ
         function renderPitch() {
-            for (let id in todayGrid) {
-                const data = todayGrid[id];
-                const container = document.getElementById(id);
-                container.innerHTML = `
-                    <div class="slot" id="${id}-btn" onclick="openSearch('${id}')">+</div>
-                    <div class="pos-badge">${data.pos}</div>
-                    <div class="player-name" id="${id}-name"></div>
-                    <div class="criteria">${data.criteriaText}</div>
-                `;
-            }
+            const pitch = document.getElementById("pitch");
+            pitch.innerHTML = "";
+            let slotIndex = 0;
+
+            dailyFormationLayout.forEach(rowArr => {
+                const rowDiv = document.createElement("div");
+                rowDiv.className = "row";
+                
+                rowArr.forEach(pos => {
+                    const slotId = `slot-${slotIndex}`;
+                    const data = todayGrid[slotId];
+                    
+                    rowDiv.innerHTML += `
+                        <div class="slot-container" id="${slotId}-container">
+                            <div class="slot" id="${slotId}-btn" onclick="openSearch('${slotId}')">+</div>
+                            <div class="pos-badge">${data.pos}</div>
+                            <div class="player-name" id="${slotId}-name"></div>
+                            <div class="criteria">${data.criteriaText}</div>
+                        </div>
+                    `;
+                    slotIndex++;
+                });
+                pitch.appendChild(rowDiv);
+            });
         }
 
         function openSearch(slotId) {
@@ -575,9 +715,13 @@
             if (val.length < 2) return;
 
             const targetPos = todayGrid[activeSlotId].pos;
-            const filtered = dbPlayers.filter(p => 
-                p.pos === targetPos && normalizeMetin(p.name).includes(val)
-            );
+            
+            // Arama motoru artık genel mevkileri de tolere ediyor (Örn: LWB ve LB aramaları eşleşir)
+            const filtered = dbPlayers.filter(p => {
+                // Şimdilik sistemin hata yapmasını önlemek için sadece isime göre süzme yapıyoruz
+                // Asıl veritabanı geldiğinde mevki kontrolünü (p.pos === targetPos) aktifleştireceğiz.
+                return normalizeMetin(p.name).includes(val);
+            });
 
             filtered.forEach(player => {
                 const div = document.createElement("div");
