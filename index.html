@@ -397,7 +397,6 @@
             <div class="score-box">Skor: <span id="scoreVal">0</span></div>
         </div>
 
-        <!-- Saha artık JavaScript tarafından rastgele dizilişle doldurulacak -->
         <div class="pitch" id="pitch"></div>
 
         <button id="final-share-btn" onclick="showShareScreen()">PAYLAŞ</button>
@@ -438,7 +437,6 @@
         let dailyFormationLayout = [];
         let todayGrid = {};
 
-        // TEST VERİTABANI (Daha sonra gerçek verilerle değişecek)
         const dbPlayers = [
             { name: "Dani Osvaldo", pos: "ST", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/176/993/16_120.png", traits: ["serie_a_3"] },
             { name: "Mauro Icardi", pos: "ST", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["gol_400", "psg", "super_lig"] },
@@ -453,20 +451,19 @@
             { name: "Gregor Kobel", pos: "GK", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/234/396/24_120.png", traits: ["5_sezon_bundesliga"] }
         ];
 
-        // DİZİLİŞ HAVUZU
+        // FORVETLER EN ÜSTTE, KALECİ EN ALTTA OLACAK ŞEKİLDE DÜZELTİLDİ
         const dizilisler = {
-            "433": [["GK"], ["LB", "CB", "CB", "RB"], ["CM", "CM", "CM"], ["LM", "ST", "RM"]],
-            "4231": [["GK"], ["LB", "CB", "CB", "RB"], ["CM", "CM"], ["LM", "CM", "RM"], ["ST"]],
-            "442": [["GK"], ["LB", "CB", "CB", "RB"], ["LM", "CM", "CM", "RM"], ["ST", "ST"]],
-            "451": [["GK"], ["LB", "CB", "CB", "RB"], ["LM", "CM", "CM", "CM", "RM"], ["ST"]],
-            "460": [["GK"], ["LB", "CB", "CB", "RB"], ["LM", "CM", "CM", "RM"], ["CM", "CM"]],
-            "343": [["GK"], ["CB", "CB", "CB"], ["LM", "CM", "CM", "RM"], ["LM", "ST", "RM"]],
-            "352": [["GK"], ["CB", "CB", "CB"], ["LM", "CM", "CM", "CM", "RM"], ["ST", "ST"]],
-            "541": [["GK"], ["LB", "CB", "CB", "CB", "RB"], ["LM", "CM", "CM", "RM"], ["ST"]],
-            "532": [["GK"], ["LB", "CB", "CB", "CB", "RB"], ["CM", "CM", "CM"], ["ST", "ST"]]
+            "433": [["LM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "4231": [["ST"], ["LM", "CM", "RM"], ["CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "442": [["ST", "ST"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "451": [["ST"], ["LM", "CM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "460": [["CM", "CM"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "343": [["LM", "ST", "RM"], ["LM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]],
+            "352": [["ST", "ST"], ["LM", "CM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]],
+            "541": [["ST"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "CB", "RB"], ["GK"]],
+            "532": [["ST", "ST"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "CB", "RB"], ["GK"]]
         };
 
-        // KRİTER HAVUZU (Tüm Verdiğin Veriler Eksiksiz)
         const kriterler = {
             GK: [
                 { text: "3'ten Fazla Gol Atmış", trait: "gk_3_gol" },
@@ -549,7 +546,6 @@
             ]
         };
 
-        // GÜNLÜK TOHUM (SEED) ÜRETİCİSİ - Her gün 00:00'da sıfırlanır
         function mulberry32(a) {
             return function() {
               var t = a += 0x6D2B79F5;
@@ -564,7 +560,6 @@
             const dateString = today.getFullYear() + "" + today.getMonth() + "" + today.getDate();
             const rnd = mulberry32(parseInt(dateString));
 
-            // Rastgele Diziliş Seç
             const formKeys = Object.keys(dizilisler);
             const selKey = formKeys[Math.floor(rnd() * formKeys.length)];
             dailyFormationLayout = dizilisler[selKey];
@@ -587,7 +582,7 @@
                     let attempts = 0;
                     
                     while(attempts < 200) {
-                        const useGeneral = (rnd() > 0.4); // %60 İhtimalle Genel Kriter
+                        const useGeneral = (rnd() > 0.4); 
                         const currentPool = (useGeneral || pool.length === 0) ? kriterler.GENEL : pool;
                         
                         selectedCriterion = currentPool[Math.floor(rnd() * currentPool.length)];
@@ -609,9 +604,8 @@
             });
         }
 
-        // SAYFA YÜKLENDİĞİNDE GÜNLÜK GRİDİ OLUŞTUR VE HAFIZAYA BAK
         window.onload = () => {
-            generateDailyGrid(); // Rastgelelik çalıştırılır
+            generateDailyGrid(); 
             
             const savedName = localStorage.getItem("grid11_username");
             if (savedName) {
@@ -651,7 +645,6 @@
             renderPitch();
         }
 
-        // SAHAYI ARTIK HTML'DEN DEĞİL, JS İLE RASTGELE DİZİLİŞE GÖRE ÇİZİYORUZ
         function renderPitch() {
             const pitch = document.getElementById("pitch");
             pitch.innerHTML = "";
@@ -716,10 +709,7 @@
 
             const targetPos = todayGrid[activeSlotId].pos;
             
-            // Arama motoru artık genel mevkileri de tolere ediyor (Örn: LWB ve LB aramaları eşleşir)
             const filtered = dbPlayers.filter(p => {
-                // Şimdilik sistemin hata yapmasını önlemek için sadece isime göre süzme yapıyoruz
-                // Asıl veritabanı geldiğinde mevki kontrolünü (p.pos === targetPos) aktifleştireceğiz.
                 return normalizeMetin(p.name).includes(val);
             });
 
