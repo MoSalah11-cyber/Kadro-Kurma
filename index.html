@@ -87,6 +87,13 @@
 
         .play-btn:hover { background: #2ecc71; transform: translateY(-2px); }
 
+        #db-status {
+            font-size: 16px;
+            color: #f1c40f;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
         #game-container {
             display: none;
             width: 100%;
@@ -370,14 +377,6 @@
         }
         
         .close-btn:hover { background: #ccc; }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            50% { transform: translateX(6px); }
-            75% { transform: translateX(-6px); }
-            100% { transform: translateX(0); }
-        }
     </style>
 </head>
 <body>
@@ -387,11 +386,11 @@
     <div id="login-screen">
         <h1>BİL BAKALIM KİM? FUTBOL</h1>
         <input type="text" id="nickname-input" placeholder="Nickname girin..." autocomplete="off">
-        <button class="play-btn" onclick="startGame()">OYNA</button>
+        <button class="play-btn" id="play-btn-id" onclick="startGame()" disabled style="background:#555; cursor:not-allowed;">OYNA</button>
+        <div id="db-status">Transfermarkt Veritabanı Yükleniyor... ⏳</div>
     </div>
 
     <div id="game-container">
-        
         <div class="header">
             <div class="user-info" id="display-nickname">---</div>
             <div class="score-box">Skor: <span id="scoreVal">0</span></div>
@@ -436,22 +435,10 @@
         
         let dailyFormationLayout = [];
         let todayGrid = {};
+        
+        // CANLI VERİ BURAYA GELECEK
+        let dbPlayers = [];
 
-        const dbPlayers = [
-            { name: "Dani Osvaldo", pos: "ST", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/176/993/16_120.png", traits: ["serie_a_3"] },
-            { name: "Mauro Icardi", pos: "ST", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/201/399/24_120.png", traits: ["gol_400", "psg", "super_lig"] },
-            { name: "Noa Lang", pos: "LM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/247/802/24_120.png", traits: ["eredivisie"] },
-            { name: "Mario Lemina", pos: "CM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/212/883/24_120.png", traits: ["super_lig"] },
-            { name: "Gabriel Sara", pos: "CM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/247/204/24_120.png", traits: ["brezilya"] },
-            { name: "Leroy Sané", pos: "RM", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/222/492/24_120.png", traits: ["almanya"] },
-            { name: "Jordi Alba", pos: "LB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/189/332/24_120.png", traits: ["ispanya"] },
-            { name: "Abdülkerim Bardakçı", pos: "CB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/232/730/24_120.png", traits: ["turkiye", "super_lig"] },
-            { name: "Paolo Maldini", pos: "CB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/110/9/09_120.png", traits: ["tek_takim"] },
-            { name: "Kyle Walker", pos: "RB", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/188/350/24_120.png", traits: ["ingiltere"] },
-            { name: "Gregor Kobel", pos: "GK", img: "https://api.allorigins.win/raw?url=https://cdn.sofifa.net/players/234/396/24_120.png", traits: ["5_sezon_bundesliga"] }
-        ];
-
-        // FORVETLER EN ÜSTTE, KALECİ EN ALTTA OLACAK ŞEKİLDE DÜZELTİLDİ
         const dizilisler = {
             "433": [["LM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
             "4231": [["ST"], ["LM", "CM", "RM"], ["CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
@@ -498,53 +485,161 @@
                 { text: "3+ UCL Şampiyonluğu", trait: "ucl_3" },
                 { text: "Dünya Kupası Kazanmış", trait: "wc_winner" },
                 { text: "Kariyer Boyu Tek Takım", trait: "tek_takim" },
-                { text: "5 Büyük Ligin En Az 3'ünde Oynamış", trait: "big_5_3_lig" },
-                { text: "5 Büyük Ligde Hiç Oynamamış", trait: "big_5_yok" },
                 { text: "Süper Lig'de Oynamış", trait: "super_lig" },
-                { text: "Türkiye'de 3+ Takımda Oynamış", trait: "tr_3_takim" },
-                { text: "45 İle 60 Yaş Arası", trait: "yas_45_60" },
-                { text: "23 Ve Altında Yaş", trait: "yas_23_alt" },
-                { text: "Güney Amerika Kulübünde Oynamış", trait: "sa_kulup" },
                 { text: "Asyalı", trait: "asyali" },
                 { text: "Avrupalı", trait: "avrupali" },
                 { text: "Afrikalı", trait: "afrikali" },
                 { text: "Güney Amerikalı", trait: "guney_amerikali" },
-                { text: "Kuzey Amerikalı", trait: "kuzey_amerikali" },
                 { text: "Bundesliga'da 5+ Sezon Oynamış", trait: "5_sezon_bundesliga" },
                 { text: "Premier Lig'de 5+ Sezon Oynamış", trait: "5_sezon_pl" },
-                { text: "Serie A'da 5+ Sezon Oynamış", trait: "5_sezon_serie_a" },
-                { text: "Ligue 1'de 5+ Sezon Oynamış", trait: "5_sezon_ligue1" },
                 { text: "La Liga'da 5+ Sezon Oynamış", trait: "5_sezon_laliga" },
-                { text: "Süper Lig'de 5+ Sezon Oynamış", trait: "5_sezon_sl" },
-                { text: "TFF 1. Lig'de 5+ Sezon Oynamış", trait: "5_sezon_tff1" },
                 { text: "Milli Takımla 100+ Maç", trait: "milli_100" },
-                { text: "5+ Lig Kupası", trait: "kupa_5" },
-                { text: "ZTK Kazanmış", trait: "ztk_winner" },
-                { text: "60 Yaş Ve Üstü", trait: "yas_60_ust" },
-                { text: "8+ Takımda Oynamış", trait: "takim_8_ust" },
-                { text: "Serie A'da 3+ Takımda Oynamış", trait: "serie_a_3" },
-                { text: "Premier Lig'de 3+ Takımda Oynamış", trait: "pl_3" },
                 { text: "Brezilyalı", trait: "brezilya" },
-                { text: "Belçikalı", trait: "belcika" },
-                { text: "Hollandalı", trait: "hollanda" },
                 { text: "Alman", trait: "almanya" },
-                { text: "Fransız", trait: "fransa" },
                 { text: "İngiliz", trait: "ingiltere" },
                 { text: "İspanyol", trait: "ispanya" },
-                { text: "İtalyan", trait: "italya" },
-                { text: "Portekizli", trait: "portekiz" },
                 { text: "Türk", trait: "turkiye" },
                 { text: "Arjantinli", trait: "arjantin" },
-                { text: "Uruguaylı", trait: "uruguay" },
-                { text: "Nijeryalı", trait: "nijerya" },
-                { text: "Fildişi Sahilli", trait: "fildisi" },
-                { text: "Ganalı", trait: "gana" },
-                { text: "Senegalli", trait: "senegal" },
-                { text: "Milli Takımda Hiç Oynamamış", trait: "milli_yok" },
                 { text: "Max Piyasa Değeri 75M Ve Üzeri", trait: "pd_75_ust" },
                 { text: "Max Piyasa Değeri 75M Altında", trait: "pd_75_alt" }
             ]
         };
+
+        // GITHUB DCARIBOU REPOSUNDAN CANLI VERİ ÇEKME MOTORU
+        async function fetchTransfermarktData() {
+            try {
+                // Sen bulduğun o repository'nin asıl oyuncu listesine bağlanır
+                const url = "https://raw.githubusercontent.com/dcaribou/transfermarkt-datasets/master/data/prep/players.csv";
+                const response = await fetch(url);
+                if(!response.ok) throw new Error("CSV Bulunamadı");
+                
+                const csvData = await response.text();
+                const lines = csvData.split('\n');
+                
+                // CSV'deki virgülleri düzgün ayırmak için ufak temizleyici
+                const parseRow = (str) => {
+                    const res = [];
+                    let inQ = false, curr = "";
+                    for(let i=0; i<str.length; i++){
+                        if(str[i] === '"') inQ = !inQ;
+                        else if(str[i] === ',' && !inQ) { res.push(curr); curr = ""; }
+                        else curr += str[i];
+                    }
+                    res.push(curr);
+                    return res;
+                };
+
+                const headers = parseRow(lines[0].trim());
+                const hIdx = {
+                    id: headers.indexOf("player_id"),
+                    name: headers.indexOf("name"),
+                    pos: headers.indexOf("position"),
+                    sub: headers.indexOf("sub_position"),
+                    nat: headers.indexOf("country_of_citizenship"),
+                    hgt: headers.indexOf("height_in_cm"),
+                    mv: headers.indexOf("highest_market_value_in_eur"),
+                    league: headers.indexOf("current_club_domestic_league_id")
+                };
+
+                const loaded = [];
+
+                // EFSANELER SÖZLÜĞÜ: CSV'de olmayan özel başarıları ikonik oyunculara kilitler
+                const efsaneler = {
+                    "Mauro Icardi": ["gol_400", "super_lig", "arjantin", "guney_amerikali"],
+                    "Lionel Messi": ["ballondor", "asist_200", "altin_ayakkabi", "gol_400", "ucl_30_gol", "wc_winner", "ucl_3", "guney_amerikali", "arjantin", "milli_100"],
+                    "Cristiano Ronaldo": ["ballondor", "gol_400", "ucl_30_gol", "kafa_golu_50", "ucl_3", "milli_100", "avrupali", "portekiz"],
+                    "Fernando Muslera": ["gk_3_gol", "super_lig", "ztk_winner", "milli_100", "uruguay", "guney_amerikali"],
+                    "Manuel Neuer": ["altin_eldiven", "wc_winner", "ucl_3", "milli_100", "almanya", "avrupali", "5_sezon_bundesliga"],
+                    "Luka Modric": ["ballondor", "ucl_3", "milli_100", "avrupali", "5_sezon_laliga"],
+                    "Burak Yilmaz": ["super_lig", "anadolu_gol_krali", "turkiye", "avrupali"],
+                    "Sergio Ramos": ["cb_7_kirmizi", "fb_5_kirmizi", "kafa_golu_50", "ucl_3", "wc_winner", "ispanya", "avrupali", "5_sezon_laliga", "milli_100"]
+                };
+
+                for(let i=1; i<lines.length; i++) {
+                    const line = lines[i].trim();
+                    if(!line) continue;
+                    
+                    const cols = parseRow(line);
+                    if(cols.length < headers.length) continue;
+
+                    const pName = cols[hIdx.name] || "";
+                    if(pName.length < 2) continue;
+
+                    const pId = cols[hIdx.id] || "";
+                    const pPos = (cols[hIdx.pos] || "").toUpperCase();
+                    const pSub = (cols[hIdx.sub] || "").toUpperCase();
+                    const pNat = (cols[hIdx.nat] || "").toLowerCase();
+                    const pLig = (cols[hIdx.league] || "").toUpperCase();
+                    const pHgt = parseInt(cols[hIdx.hgt]) || 0;
+                    const pMv = parseInt(cols[hIdx.mv]) || 0;
+
+                    // Transfermarkt Profil Fotoğrafı Linki Oluşturucu
+                    const pImg = pId ? `https://img.a.transfermarkt.technology/portrait/header/${pId}.jpg?lm=1` : "https://cdn.sofifa.net/players/176/993/16_120.png";
+
+                    // Mevki Algoritması
+                    let pos = "CM";
+                    if(pPos === "ATTACK" || pSub.includes("CENTRE-FORWARD")) pos = "ST";
+                    if(pSub.includes("LEFT-BACK")) pos = "LB";
+                    if(pSub.includes("RIGHT-BACK")) pos = "RB";
+                    if(pPos === "DEFENDER" || pSub.includes("CENTRE-BACK")) pos = "CB";
+                    if(pPos === "GOALKEEPER") pos = "GK";
+                    if(pSub.includes("LEFT WINGER")) pos = "LM";
+                    if(pSub.includes("RIGHT WINGER")) pos = "RM";
+
+                    // Otomatik Etiketleme Sistemi
+                    const tr = [];
+                    if(pNat.includes("turkey") || pNat.includes("türk")) tr.push("turkiye", "avrupali");
+                    if(pNat.includes("brazil")) tr.push("brezilya", "guney_amerikali");
+                    if(pNat.includes("germany")) tr.push("almanya", "avrupali");
+                    if(pNat.includes("spain")) tr.push("ispanya", "avrupali");
+                    if(pNat.includes("england")) tr.push("ingiltere", "avrupali");
+                    if(pNat.includes("france")) tr.push("fransa", "avrupali");
+                    if(pNat.includes("italy")) tr.push("italya", "avrupali");
+                    if(pNat.includes("netherlands") || pNat.includes("holland")) tr.push("hollanda", "eredivisie");
+                    if(pNat.includes("argentina")) tr.push("arjantin", "guney_amerikali");
+                    if(pNat.includes("nigeria") || pNat.includes("senegal") || pNat.includes("cote d'ivoire") || pNat.includes("ghana")) tr.push("afrikali");
+
+                    if(pHgt > 190) tr.push("boy_uzun_190");
+                    if(pHgt > 0 && pHgt < 190) tr.push("boy_kisa_190");
+
+                    if(pMv >= 75000000) tr.push("pd_75_ust");
+                    else tr.push("pd_75_alt");
+
+                    if(pLig === "TR1") tr.push("super_lig");
+                    if(pLig === "GB1") tr.push("5_sezon_pl");
+                    if(pLig === "L1") tr.push("5_sezon_bundesliga");
+                    if(pLig === "ES1") tr.push("5_sezon_laliga");
+
+                    if(efsaneler[pName]) {
+                        tr.push(...efsaneler[pName]);
+                    }
+
+                    loaded.push({
+                        name: pName,
+                        pos: pos,
+                        img: pImg,
+                        traits: [...new Set(tr)] // Aynı etiketin 2 kez girilmesini önler
+                    });
+                }
+
+                if(loaded.length > 0) {
+                    dbPlayers = loaded;
+                    document.getElementById("db-status").innerText = `✓ ${dbPlayers.length} Futbolcu Çekildi!`;
+                    document.getElementById("db-status").style.color = "#2ecc71";
+                    
+                    // OYNA BUTONUNU AKTİF ET
+                    const btn = document.getElementById("play-btn-id");
+                    btn.disabled = false;
+                    btn.style.background = "#27ae60";
+                    btn.style.cursor = "pointer";
+                }
+
+            } catch (error) {
+                console.log("Veri çekme hatası: ", error);
+                document.getElementById("db-status").innerText = "⚠ Veri Çekilemedi. Sayfayı Yenile.";
+                document.getElementById("db-status").style.color = "#e74c3c";
+            }
+        }
 
         function mulberry32(a) {
             return function() {
@@ -604,16 +699,15 @@
             });
         }
 
+        // SAYFA AÇILDIĞINDA DEV VERİTABANINI ÇEKMEYE BAŞLAR
         window.onload = () => {
             generateDailyGrid(); 
+            fetchTransfermarktData(); // <-- ARTIK ÇALIŞIYOR
             
             const savedName = localStorage.getItem("grid11_username");
             if (savedName) {
                 username = savedName;
-                document.getElementById("display-nickname").innerText = username;
-                document.getElementById("login-screen").style.display = "none";
-                document.getElementById("game-container").style.display = "block";
-                renderPitch();
+                document.getElementById("nickname-input").value = username; // İsmi hazırlar
             }
         };
 
@@ -707,16 +801,14 @@
 
             if (val.length < 2) return;
 
-            const targetPos = todayGrid[activeSlotId].pos;
-            
-            const filtered = dbPlayers.filter(p => {
-                return normalizeMetin(p.name).includes(val);
-            });
+            // Yazdığın an 37 BİN oyuncu içinde filtreleme yapar
+            const filtered = dbPlayers.filter(p => normalizeMetin(p.name).includes(val));
 
-            filtered.forEach(player => {
+            // Ekrana 15 tanesini basar (Kasmayı önlemek için)
+            filtered.slice(0, 15).forEach(player => {
                 const div = document.createElement("div");
                 div.className = "player-item";
-                div.innerHTML = `<img src="${player.img}" alt="face"> ${player.name}`;
+                div.innerHTML = `<img src="${player.img}" alt="face" onerror="this.src='https://cdn.sofifa.net/players/176/993/16_120.png'"> ${player.name}`;
                 div.onclick = () => attemptPlacePlayer(player);
                 resultsBox.appendChild(div);
             });
