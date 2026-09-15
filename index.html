@@ -384,10 +384,10 @@
     <div id="flash-effect"></div>
 
     <div id="login-screen">
-        <h1>BİL BAKALIM KİM? FUTBOL</h1>
+        <h1>BIL BAKALIM KIM? FUTBOL</h1>
         <input type="text" id="nickname-input" placeholder="Nickname girin..." autocomplete="off">
         <button class="play-btn" id="play-btn-id" onclick="startGame()" disabled style="background:#555; cursor:not-allowed;">OYNA</button>
-        <div id="db-status">Transfermarkt Veritabanı Yükleniyor... ⏳</div>
+        <div id="db-status">Transfermarkt Veritabani Yukleniyor...</div>
     </div>
 
     <div id="game-container">
@@ -398,7 +398,7 @@
 
         <div class="pitch" id="pitch"></div>
 
-        <button id="final-share-btn" onclick="showShareScreen()">PAYLAŞ</button>
+        <button id="final-share-btn" onclick="showShareScreen()">PAYLAS</button>
     </div>
 
     <div class="modal" id="search-modal">
@@ -417,7 +417,7 @@
             <div id="ss-card">
                 <div id="ss-inner">
                     <div id="ss-header">
-                        <h2 id="ss-title">---'in İlk 11'i</h2>
+                        <h2 id="ss-title">---'in Ilk 11'i</h2>
                         <div id="ss-score">Skor: 0</div>
                     </div>
                     <div id="ss-pitch-container"></div>
@@ -435,9 +435,7 @@
         
         let dailyFormationLayout = [];
         let todayGrid = {};
-        
-        // CANLI VERİ BURAYA GELECEK
-        let dbPlayers = [];
+        let dbPlayers = []; 
 
         const dizilisler = {
             "433": [["LM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
@@ -453,83 +451,117 @@
 
         const kriterler = {
             GK: [
-                { text: "3'ten Fazla Gol Atmış", trait: "gk_3_gol" },
-                { text: "Altın Eldiven Kazanmış", trait: "altin_eldiven" },
-                { text: "190cm'den Kısa Boylu", trait: "boy_kisa_190" }
+                { text: "3'ten Fazla Gol Atmis", trait: "gk_3_gol" },
+                { text: "Altin Eldiven Kazanmis", trait: "altin_eldiven" },
+                { text: "190cm'den Kisa Boylu", trait: "boy_kisa_190" }
             ],
             FB: [
-                { text: "5'ten Fazla Kırmızı Kart Görmüş", trait: "fb_5_kirmizi" }
+                { text: "5'ten Fazla Kirmizi Kart Gormus", trait: "fb_5_kirmizi" }
             ],
             CB: [
-                { text: "7'den Fazla Kırmızı Kart Görmüş", trait: "cb_7_kirmizi" },
+                { text: "7'den Fazla Kirmizi Kart Gormus", trait: "cb_7_kirmizi" },
                 { text: "190cm'den Uzun Boylu", trait: "boy_uzun_190" }
             ],
             CM: [
-                { text: "Ballon d'Or Kazanmış", trait: "ballondor" }
+                { text: "Ballon d'Or Kazanmis", trait: "ballondor" }
             ],
             WING: [
-                { text: "Ballon d'Or Kazanmış", trait: "ballondor" },
-                { text: "200'den Fazla Asist Yapmış", trait: "asist_200" },
-                { text: "2+ Asist Krallığı", trait: "asist_kral_2" }
+                { text: "Ballon d'Or Kazanmis", trait: "ballondor" },
+                { text: "200'den Fazla Asist Yapmis", trait: "asist_200" },
+                { text: "2+ Asist Kralligi", trait: "asist_kral_2" }
             ],
             ST: [
                 { text: "400+ Gol", trait: "gol_400" },
                 { text: "200+ Asist", trait: "asist_200" },
-                { text: "Altın Ayakkabı Kazanmış", trait: "altin_ayakkabi" },
-                { text: "3+ Gol Krallığı", trait: "gol_krali_3" },
+                { text: "Altin Ayakkabi Kazanmis", trait: "altin_ayakkabi" },
+                { text: "3+ Gol Kralligi", trait: "gol_krali_3" },
                 { text: "UCL'de 30+ Gol", trait: "ucl_30_gol" },
-                { text: "50+ Kafa Golü", trait: "kafa_golu_50" },
-                { text: "4 Büyükler Dışı Süper Lig Gol Kralı", trait: "anadolu_gol_krali" }
+                { text: "50+ Kafa Golu", trait: "kafa_golu_50" },
+                { text: "4 Buyukler Disi Super Lig Gol Krali", trait: "anadolu_gol_krali" }
             ],
             GENEL: [
-                { text: "3+ UCL Şampiyonluğu", trait: "ucl_3" },
-                { text: "Dünya Kupası Kazanmış", trait: "wc_winner" },
-                { text: "Kariyer Boyu Tek Takım", trait: "tek_takim" },
-                { text: "Süper Lig'de Oynamış", trait: "super_lig" },
-                { text: "Asyalı", trait: "asyali" },
-                { text: "Avrupalı", trait: "avrupali" },
-                { text: "Afrikalı", trait: "afrikali" },
-                { text: "Güney Amerikalı", trait: "guney_amerikali" },
-                { text: "Bundesliga'da 5+ Sezon Oynamış", trait: "5_sezon_bundesliga" },
-                { text: "Premier Lig'de 5+ Sezon Oynamış", trait: "5_sezon_pl" },
-                { text: "La Liga'da 5+ Sezon Oynamış", trait: "5_sezon_laliga" },
-                { text: "Milli Takımla 100+ Maç", trait: "milli_100" },
-                { text: "Brezilyalı", trait: "brezilya" },
+                { text: "3+ UCL Sampiyonlugu", trait: "ucl_3" },
+                { text: "Dunya Kupasi Kazanmis", trait: "wc_winner" },
+                { text: "Kariyer Boyu Tek Takim", trait: "tek_takim" },
+                { text: "Super Lig'de Oynamis", trait: "super_lig" },
+                { text: "Asyali", trait: "asyali" },
+                { text: "Avrupali", trait: "avrupali" },
+                { text: "Afrikali", trait: "afrikali" },
+                { text: "Guney Amerikali", trait: "guney_amerikali" },
+                { text: "Bundesliga'da 5+ Sezon Oynamis", trait: "5_sezon_bundesliga" },
+                { text: "Premier Lig'de 5+ Sezon Oynamis", trait: "5_sezon_pl" },
+                { text: "La Liga'da 5+ Sezon Oynamis", trait: "5_sezon_laliga" },
+                { text: "Milli Takimla 100+ Mac", trait: "milli_100" },
+                { text: "Brezilyali", trait: "brezilya" },
                 { text: "Alman", trait: "almanya" },
-                { text: "İngiliz", trait: "ingiltere" },
-                { text: "İspanyol", trait: "ispanya" },
-                { text: "Türk", trait: "turkiye" },
+                { text: "Ingiliz", trait: "ingiltere" },
+                { text: "Ispanyol", trait: "ispanya" },
+                { text: "Turk", trait: "turkiye" },
                 { text: "Arjantinli", trait: "arjantin" },
-                { text: "Max Piyasa Değeri 75M Ve Üzeri", trait: "pd_75_ust" },
-                { text: "Max Piyasa Değeri 75M Altında", trait: "pd_75_alt" }
+                { text: "Max Piyasa Degeri 75M Ve Uzeri", trait: "pd_75_ust" },
+                { text: "Max Piyasa Degeri 75M Altinda", trait: "pd_75_alt" }
             ]
         };
 
-        // GITHUB DCARIBOU REPOSUNDAN CANLI VERİ ÇEKME MOTORU
+        // Hizli ve guvenli parcalayici (Virgulleri karistirmamasi icin)
+        const parseRow = (str) => {
+            let arr = [];
+            let quote = false;
+            let val = '';
+            for (let i = 0; i < str.length; i++) {
+                let cc = str[i];
+                if (cc === '"') {
+                    quote = !quote;
+                } else if (cc === ',' && !quote) {
+                    arr.push(val);
+                    val = '';
+                } else {
+                    val += cc;
+                }
+            }
+            arr.push(val);
+            return arr;
+        };
+
         async function fetchTransfermarktData() {
             try {
-                // Sen bulduğun o repository'nin asıl oyuncu listesine bağlanır
-                const url = "https://raw.githubusercontent.com/dcaribou/transfermarkt-datasets/master/data/prep/players.csv";
-                const response = await fetch(url);
-                if(!response.ok) throw new Error("CSV Bulunamadı");
-                
-                const csvData = await response.text();
-                const lines = csvData.split('\n');
-                
-                // CSV'deki virgülleri düzgün ayırmak için ufak temizleyici
-                const parseRow = (str) => {
-                    const res = [];
-                    let inQ = false, curr = "";
-                    for(let i=0; i<str.length; i++){
-                        if(str[i] === '"') inQ = !inQ;
-                        else if(str[i] === ',' && !inQ) { res.push(curr); curr = ""; }
-                        else curr += str[i];
-                    }
-                    res.push(curr);
-                    return res;
-                };
+                const statusEl = document.getElementById("db-status");
+                statusEl.innerText = "Baglanti Kuruluyor...";
 
+                const possibleUrls = [
+                    "https://raw.githubusercontent.com/dcaribou/transfermarkt-datasets/main/data/prep/players.csv",
+                    "https://raw.githubusercontent.com/dcaribou/transfermarkt-datasets/master/data/prep/players.csv",
+                    "https://raw.githubusercontent.com/dcaribou/transfermarkt-datasets/main/data/players.csv",
+                    "https://raw.githubusercontent.com/dcaribou/transfermarkt-datasets/master/data/players.csv"
+                ];
+
+                let csvData = null;
+
+                for (let i = 0; i < possibleUrls.length; i++) {
+                    try {
+                        const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(possibleUrls[i]);
+                        const response = await fetch(proxyUrl);
+                        if (response.ok) {
+                            const text = await response.text();
+                            if (text.includes("player_id") && text.includes("name")) {
+                                csvData = text;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        console.log("Deneme basarisiz:", possibleUrls[i]);
+                    }
+                }
+
+                if (!csvData) {
+                    throw new Error("CSV Bulunamadi");
+                }
+
+                statusEl.innerText = "Veriler Isleniyor, Lutfen Bekle...";
+
+                const lines = csvData.split('\n');
                 const headers = parseRow(lines[0].trim());
+                
                 const hIdx = {
                     id: headers.indexOf("player_id"),
                     name: headers.indexOf("name"),
@@ -542,8 +574,6 @@
                 };
 
                 const loaded = [];
-
-                // EFSANELER SÖZLÜĞÜ: CSV'de olmayan özel başarıları ikonik oyunculara kilitler
                 const efsaneler = {
                     "Mauro Icardi": ["gol_400", "super_lig", "arjantin", "guney_amerikali"],
                     "Lionel Messi": ["ballondor", "asist_200", "altin_ayakkabi", "gol_400", "ucl_30_gol", "wc_winner", "ucl_3", "guney_amerikali", "arjantin", "milli_100"],
@@ -573,10 +603,8 @@
                     const pHgt = parseInt(cols[hIdx.hgt]) || 0;
                     const pMv = parseInt(cols[hIdx.mv]) || 0;
 
-                    // Transfermarkt Profil Fotoğrafı Linki Oluşturucu
                     const pImg = pId ? `https://img.a.transfermarkt.technology/portrait/header/${pId}.jpg?lm=1` : "https://cdn.sofifa.net/players/176/993/16_120.png";
 
-                    // Mevki Algoritması
                     let pos = "CM";
                     if(pPos === "ATTACK" || pSub.includes("CENTRE-FORWARD")) pos = "ST";
                     if(pSub.includes("LEFT-BACK")) pos = "LB";
@@ -586,7 +614,6 @@
                     if(pSub.includes("LEFT WINGER")) pos = "LM";
                     if(pSub.includes("RIGHT WINGER")) pos = "RM";
 
-                    // Otomatik Etiketleme Sistemi
                     const tr = [];
                     if(pNat.includes("turkey") || pNat.includes("türk")) tr.push("turkiye", "avrupali");
                     if(pNat.includes("brazil")) tr.push("brezilya", "guney_amerikali");
@@ -618,16 +645,15 @@
                         name: pName,
                         pos: pos,
                         img: pImg,
-                        traits: [...new Set(tr)] // Aynı etiketin 2 kez girilmesini önler
+                        traits: [...new Set(tr)]
                     });
                 }
 
                 if(loaded.length > 0) {
                     dbPlayers = loaded;
-                    document.getElementById("db-status").innerText = `✓ ${dbPlayers.length} Futbolcu Çekildi!`;
-                    document.getElementById("db-status").style.color = "#2ecc71";
+                    statusEl.innerText = "[BASARILI] Futbolcular Cekildi!";
+                    statusEl.style.color = "#2ecc71";
                     
-                    // OYNA BUTONUNU AKTİF ET
                     const btn = document.getElementById("play-btn-id");
                     btn.disabled = false;
                     btn.style.background = "#27ae60";
@@ -635,8 +661,8 @@
                 }
 
             } catch (error) {
-                console.log("Veri çekme hatası: ", error);
-                document.getElementById("db-status").innerText = "⚠ Veri Çekilemedi. Sayfayı Yenile.";
+                console.log(error);
+                document.getElementById("db-status").innerText = "[HATA] Veri Cekilemedi. Sayfayi Yenile.";
                 document.getElementById("db-status").style.color = "#e74c3c";
             }
         }
@@ -699,15 +725,14 @@
             });
         }
 
-        // SAYFA AÇILDIĞINDA DEV VERİTABANINI ÇEKMEYE BAŞLAR
         window.onload = () => {
             generateDailyGrid(); 
-            fetchTransfermarktData(); // <-- ARTIK ÇALIŞIYOR
+            fetchTransfermarktData(); 
             
             const savedName = localStorage.getItem("grid11_username");
             if (savedName) {
                 username = savedName;
-                document.getElementById("nickname-input").value = username; // İsmi hazırlar
+                document.getElementById("nickname-input").value = username;
             }
         };
 
@@ -801,10 +826,8 @@
 
             if (val.length < 2) return;
 
-            // Yazdığın an 37 BİN oyuncu içinde filtreleme yapar
             const filtered = dbPlayers.filter(p => normalizeMetin(p.name).includes(val));
 
-            // Ekrana 15 tanesini basar (Kasmayı önlemek için)
             filtered.slice(0, 15).forEach(player => {
                 const div = document.createElement("div");
                 div.className = "player-item";
@@ -855,7 +878,7 @@
                 flash.classList.remove("flash-active");
             }, 80);
 
-            document.getElementById("ss-title").innerText = `${username}'in İlk 11'i`;
+            document.getElementById("ss-title").innerText = `${username}'in Ilk 11'i`;
             document.getElementById("ss-score").innerText = `Skor: ${score}`;
             
             const originalPitch = document.getElementById("pitch");
