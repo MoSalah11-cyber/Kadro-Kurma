@@ -387,7 +387,7 @@
         <h1>BIL BAKALIM KIM? FUTBOL</h1>
         <input type="text" id="nickname-input" placeholder="Nickname girin..." autocomplete="off">
         <button class="play-btn" id="play-btn-id" onclick="startGame()" disabled style="background:#555; cursor:not-allowed;">OYNA</button>
-        <div id="db-status">Bulut Sunucusuna Eriliyor... ⏳</div>
+        <div id="db-status">Sistemdeki Veritabanı Okunuyor... ⏳</div>
     </div>
 
     <div id="game-container">
@@ -517,40 +517,29 @@
             for (let i = 0; i < str.length; i++) {
                 let cc = str[i];
                 if (cc === '"') quote = !quote;
-                else if (cc === ',' && !quote) { arr.push(val); val = ''; }
+                else if (cc === ',' && !quote) { arr.push(val.trim()); val = ''; }
                 else val += cc;
             }
-            arr.push(val);
+            arr.push(val.trim());
             return arr;
         };
 
-        async function fetchLargeDatabase() {
+        async function fetchLocalDatabase() {
             const statusEl = document.getElementById("db-status");
-            
             try {
-                // Aracı (proxy) kullanmadan direkt Transfermarkt R2 ana sunucusuna bağlanıyoruz
-                const url = "https://pub-e682421888d945d684bcae8890b0ec20.r2.dev/data/players.csv.gz";
-                const response = await fetch(url);
+                // DIŞARIYA BAĞLANMAK YOK. Direkt senin yüklediğin players.csv dosyasını okur.
+                const response = await fetch('players.csv');
                 
-                if (!response.ok) throw new Error("Ana Sunucuya Erisilemedi");
-
-                let csvData;
-                const clonedResp = response.clone();
-                try {
-                    // Sunucudan gelen gzip formatını telefonda anında açan motor
-                    const ds = new DecompressionStream("gzip");
-                    const stream = clonedResp.body.pipeThrough(ds);
-                    csvData = await new Response(stream).text();
-                } catch(e) {
-                    // Telefon çözemezse direkt metin olarak oku
-                    csvData = await response.text();
+                if (!response.ok) {
+                    throw new Error("Sitenin icinde players.csv dosyasi bulunamadi!");
                 }
 
-                if(!csvData || !csvData.includes("player_id")) throw new Error("Veri hatali");
-                statusEl.innerText = "Isimler ve Ligler Ayarlaniyor...";
+                const csvData = await response.text();
+                statusEl.innerText = "Sistem İçi Veriler İşleniyor...";
 
                 const lines = csvData.split('\n');
-                const headers = parseRow(lines[0].trim());
+                const headers = parseRow(lines[0]);
+                
                 const hIdx = {
                     id: headers.indexOf("player_id"),
                     name: headers.indexOf("name"),
@@ -563,12 +552,13 @@
                 };
 
                 const loaded = [];
+                
                 for(let i=1; i<lines.length; i++) {
-                    const line = lines[i].trim();
-                    if(!line) continue;
+                    const line = lines[i];
+                    if(!line || line.trim() === "") continue;
                     
                     const cols = parseRow(line);
-                    if(cols.length < headers.length) continue;
+                    if(cols.length < 5) continue;
 
                     const pName = cols[hIdx.name] || "";
                     if(pName.length < 2) continue;
@@ -621,7 +611,7 @@
                 }
 
                 dbPlayers = loaded;
-                statusEl.innerText = `✓ Transfermarkt: ${dbPlayers.length} Topcu Cekildi!`;
+                statusEl.innerText = `✓ Yerel Veritabanı: ${dbPlayers.length} Topçu Çekildi!`;
                 statusEl.style.color = "#2ecc71";
                 
                 const btn = document.getElementById("play-btn-id");
@@ -630,84 +620,9 @@
                 btn.style.cursor = "pointer";
 
             } catch (error) {
-                // Ana kaynak çökerse oyunu durdurmamak için FIFA 23 yedek havuzuna geçer
-                statusEl.innerText = "Ana Kaynak Hatali. FIFA Yedek Havuzu Aciliyor...";
-                try {
-                    const fallbackUrl = "https://raw.githubusercontent.com/Fredi01/FIFA-23-Players-Dataset/main/players_23.csv";
-                    const resp = await fetch(fallbackUrl);
-                    const csv2 = await resp.text();
-                    
-                    const lines2 = csv2.split('\n');
-                    const headers2 = parseRow(lines2[0].trim());
-                    const hName = headers2.indexOf("short_name");
-                    const hPos = headers2.indexOf("player_positions");
-                    const hNat = headers2.indexOf("nationality_name");
-                    const hLig = headers2.indexOf("league_name");
-                    const hMv = headers2.indexOf("value_eur");
-                    const hUrl = headers2.indexOf("player_face_url");
-                    const hHgt = headers2.indexOf("height_cm");
-
-                    const loaded2 = [];
-                    for(let i=1; i<lines2.length; i++) {
-                        const line = lines2[i].trim();
-                        if(!line) continue;
-                        const cols = parseRow(line);
-                        const pName = cols[hName] || "";
-                        if(pName.length < 2) continue;
-
-                        const rawPos = (cols[hPos] || "").split(',')[0].toUpperCase();
-                        let pos = "CM";
-                        if(["ST", "CF", "RW", "LW"].includes(rawPos)) pos = "ST";
-                        if(["LB", "LWB"].includes(rawPos)) pos = "LB";
-                        if(["RB", "RWB"].includes(rawPos)) pos = "RB";
-                        if(["CB"].includes(rawPos)) pos = "CB";
-                        if(["GK"].includes(rawPos)) pos = "GK";
-                        if(["LM"].includes(rawPos)) pos = "LM";
-                        if(["RM"].includes(rawPos)) pos = "RM";
-                        
-                        const pNat = (cols[hNat] || "").toLowerCase();
-                        const pHgt = parseInt(cols[hHgt]) || 0;
-                        const pMv = parseInt(cols[hMv]) || 0;
-                        const pLig = (cols[hLig] || "").toLowerCase();
-
-                        const tr = [];
-                        if(pNat.includes("turkey")) tr.push("turkiye", "avrupali");
-                        if(pNat.includes("brazil")) tr.push("brezilya", "guney_amerikali");
-                        if(pNat.includes("germany")) tr.push("almanya", "avrupali");
-                        if(pNat.includes("spain")) tr.push("ispanya", "avrupali");
-                        if(pNat.includes("england")) tr.push("ingiltere", "avrupali");
-                        if(pNat.includes("france")) tr.push("fransa", "avrupali");
-                        if(pNat.includes("italy")) tr.push("italya", "avrupali");
-                        if(pNat.includes("netherlands")) tr.push("hollanda", "eredivisie");
-                        if(pNat.includes("argentina")) tr.push("arjantin", "guney_amerikali");
-
-                        if(pHgt > 190) tr.push("boy_uzun_190");
-                        if(pHgt > 0 && pHgt < 190) tr.push("boy_kisa_190");
-
-                        if(pMv >= 75000000) tr.push("pd_75_ust");
-                        else tr.push("pd_75_alt");
-
-                        if(pLig.includes("super lig")) tr.push("super_lig");
-                        if(pLig.includes("premier league")) tr.push("5_sezon_pl");
-
-                        if(efsaneler[pName]) tr.push(...efsaneler[pName]);
-
-                        loaded2.push({ name: pName, pos: pos, img: cols[hUrl] || "https://cdn.sofifa.net/players/176/993/16_120.png", traits: [...new Set(tr)] });
-                    }
-
-                    dbPlayers = loaded2;
-                    statusEl.innerText = `✓ Yedek Havuz: ${dbPlayers.length} Topcu Cekildi!`;
-                    statusEl.style.color = "#2ecc71";
-                    
-                    const btn = document.getElementById("play-btn-id");
-                    btn.disabled = false;
-                    btn.style.background = "#27ae60";
-                    btn.style.cursor = "pointer";
-
-                } catch(e2) {
-                    statusEl.innerText = "Tum Kaynaklar Coktu, Lutfen Tarayiciyi Yenile.";
-                    statusEl.style.color = "#e74c3c";
-                }
+                console.log(error);
+                statusEl.innerText = "HATA: Lütfen 'players.csv' dosyasını GitHub'a yüklediğinden emin ol!";
+                statusEl.style.color = "#e74c3c";
             }
         }
 
@@ -771,7 +686,7 @@
 
         window.onload = () => {
             generateDailyGrid(); 
-            fetchLargeDatabase(); 
+            fetchLocalDatabase(); 
             
             const savedName = localStorage.getItem("grid11_username");
             if (savedName) {
