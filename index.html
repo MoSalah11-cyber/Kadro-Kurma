@@ -69,7 +69,7 @@
         #nickname-input:focus { border-color: #2ecc71; }
 
         .play-btn {
-            background: #27ae60;
+            background: #555;
             color: white;
             border: none;
             padding: 12px 20px;
@@ -77,12 +77,14 @@
             border-radius: 8px;
             font-size: 20px;
             font-weight: 800;
-            cursor: pointer;
+            cursor: not-allowed;
             transition: 0.3s;
             font-family: inherit;
         }
 
-        .play-btn:hover { background: #2ecc71; transform: translateY(-2px); }
+        .play-btn:disabled { background: #555 !important; transform: none !important; }
+        .play-btn.active-btn { background: #27ae60; cursor: pointer; }
+        .play-btn.active-btn:hover { background: #2ecc71; transform: translateY(-2px); }
 
         #db-status {
             font-size: 14px;
@@ -332,8 +334,8 @@
     <div id="login-screen">
         <h1>GÜNÜN GRİDİ</h1>
         <input type="text" id="nickname-input" placeholder="Nickini gir..." autocomplete="off">
-        <button class="play-btn" id="start-btn" onclick="startGame()">OYNA</button>
-        <div id="db-status">Veritabanı Yükleniyor... ⏳</div>
+        <button class="play-btn" id="start-btn" onclick="startGame()" disabled>OYNA</button>
+        <div id="db-status">Veritabanı Yükleniyor... Lütfen Bekle ⏳</div>
     </div>
 
     <div id="game-container">
@@ -352,7 +354,7 @@
                 <span id="search-pos-title">ARANIYOR</span>
                 <span style="cursor: pointer; color:#e74c3c;" onclick="closeModal('search-modal')">✖</span>
             </div>
-            <input type="text" id="searchInput" placeholder="Topçu ara..." autocomplete="off">
+            <input type="text" id="searchInput" placeholder="Topçu ara (Örn: Cunha)..." autocomplete="off">
             <div class="results" id="resultsList"></div>
         </div>
     </div>
@@ -381,49 +383,62 @@
         let todayGrid = {};
         let dbPlayers = []; 
 
-        // CSV Yükleme Motoru (GitHub'dan okur)
+        // Virgülleri güvenli ayıran hızlı parselleyici
+        const parseRow = (str) => {
+            let arr = [], quote = false, val = '';
+            for (let i = 0; i < str.length; i++) {
+                let cc = str[i];
+                if (cc === '"') quote = !quote;
+                else if (cc === ',' && !quote) { arr.push(val.trim()); val = ''; }
+                else val += cc;
+            }
+            arr.push(val.trim());
+            return arr;
+        };
+
         async function loadLargeDatabase() {
+            const statusEl = document.getElementById("db-status");
+            const startBtn = document.getElementById("start-btn");
+            
             try {
-                // Burada direkt senin yüklediğin dosyayı okuyoruz
-                const response = await fetch('./players.csv');
+                // Zaman damgası ekleyerek tarayıcının önbelleği (cache) atlamasını sağlıyoruz
+                const response = await fetch('./players.csv?v=' + new Date().getTime());
+                
                 if(!response.ok) throw new Error("CSV bulunamadı!");
                 
                 const dataText = await response.text();
                 const lines = dataText.split('\n');
-                const loadedPlayers = [];
-
-                // İlk satırdaki başlıkları bulalım ki sütunların yeri değişse bile kod patlamasın
-                const headers = lines[0].toLowerCase().split(',');
+                const headers = parseRow(lines[0].toLowerCase());
+                
+                // Başlıkların kaçıncı sütunda olduğunu dinamik buluyoruz
                 const nameIdx = headers.indexOf('name');
-                const posIdx = headers.indexOf('position') > -1 ? headers.indexOf('position') : headers.indexOf('sub_position');
+                const posIdx = headers.indexOf('position');
+                const subPosIdx = headers.indexOf('sub_position');
                 const nationIdx = headers.indexOf('country_of_citizenship');
 
-                // CSV'yi tarayıp kendi formatımıza çeviriyoruz
+                const loadedPlayers = [];
+
                 for(let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if(!line) continue;
+                    const line = lines[i];
+                    if(!line || line.trim() === "") continue;
                     
-                    // Virgülle ayır ama tırnak içindeki virgülleri es geç
-                    const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    if(cols.length < Math.max(nameIdx, posIdx, nationIdx)) continue;
+                    const cols = parseRow(line);
+                    
+                    const pName = cols[nameIdx] || '';
+                    const pNat = (cols[nationIdx] || '').toLowerCase();
+                    const pPos = ((cols[posIdx] || '') + " " + (cols[subPosIdx] || '')).toUpperCase();
 
-                    const pName = cols[nameIdx] ? cols[nameIdx].replace(/"/g, '') : '';
-                    const pNat = cols[nationIdx] ? cols[nationIdx].replace(/"/g, '').toLowerCase() : '';
-                    const pPos = cols[posIdx] ? cols[posIdx].replace(/"/g, '').toUpperCase() : '';
+                    if(pName.length < 2) continue;
 
-                    if(!pName || pName.length < 2) continue;
-
-                    // Transfermarkt pozisyonlarını bizim formata çevir
                     let pos = "CM";
                     if(pPos.includes("GOALKEEPER")) pos = "GK";
                     else if(pPos.includes("CENTRE-BACK")) pos = "CB";
                     else if(pPos.includes("LEFT-BACK")) pos = "LB";
                     else if(pPos.includes("RIGHT-BACK")) pos = "RB";
-                    else if(pPos.includes("MIDFIELD")) pos = "CM";
-                    else if(pPos.includes("WINGER") || pPos.includes("LEFT") || pPos.includes("RIGHT")) pos = "RM"; // Kanatlar
-                    else if(pPos.includes("FORWARD") || pPos.includes("ATTACK")) pos = "ST";
+                    else if(pPos.includes("MIDFIELD") || pPos.includes("CENTRAL")) pos = "CM";
+                    else if(pPos.includes("WINGER") || pPos.includes("LEFT") || pPos.includes("RIGHT")) pos = "RM";
+                    else if(pPos.includes("FORWARD") || pPos.includes("ATTACK") || pPos.includes("STRIKER")) pos = "ST";
 
-                    // Mevki ve ülkeye göre otomatik etiketler (Geliştirebilirsin)
                     const traits = ["herkes"];
                     if(pNat.includes("turkey") || pNat.includes("türkiye")) traits.push("turkiye");
                     if(pNat.includes("brazil")) traits.push("brezilya");
@@ -432,19 +447,25 @@
                     if(pNat.includes("england")) traits.push("ingiltere");
                     if(pNat.includes("spain")) traits.push("ispanya");
 
-                    // Varsayılan resim (Transfermarkt CSV'sinde resim URL'si olmadığı için silüet kullanıyoruz)
                     const imgUrl = "https://cdn.sofifa.net/players/notfound_0_120.png";
-
                     loadedPlayers.push({ name: pName, pos: pos, img: imgUrl, traits: traits });
                 }
 
                 dbPlayers = loadedPlayers;
-                document.getElementById("db-status").innerText = `✓ ${dbPlayers.length} Topçu Yüklendi!`;
-                document.getElementById("db-status").style.color = "#2ecc71";
+                
+                if(dbPlayers.length > 0) {
+                    statusEl.innerText = `✓ ${dbPlayers.length} Topçu Yüklendi!`;
+                    statusEl.style.color = "#2ecc71";
+                    startBtn.disabled = false;
+                    startBtn.classList.add("active-btn");
+                } else {
+                    throw new Error("Dosya boş okundu.");
+                }
+                
             } catch (err) {
                 console.log("Hata:", err);
-                document.getElementById("db-status").innerText = "CSV Okunamadı! Dosya adını kontrol et.";
-                document.getElementById("db-status").style.color = "#e74c3c";
+                statusEl.innerText = "HATA: CSV dosyası okunurken sorun çıktı. GitHub Pages'in güncellenmesi için 2-3 dakika bekleyip sayfayı yenile.";
+                statusEl.style.color = "#e74c3c";
             }
         }
 
@@ -495,7 +516,7 @@
 
             dailyFormationLayout.forEach(rowArr => {
                 rowArr.forEach(pos => {
-                    let pool = kriterler.GENEL; // Demo için her yere genel kriter basıyoruz
+                    let pool = kriterler.GENEL; 
                     const selectedCriterion = pool[Math.floor(rnd() * pool.length)];
                     
                     todayGrid[`slot-${slotIndex}`] = {
@@ -510,16 +531,14 @@
 
         window.onload = () => {
             generateDailyGrid(); 
-            loadLargeDatabase(); 
             
             const savedName = localStorage.getItem("grid11_username");
             if (savedName) {
-                username = savedName;
-                document.getElementById("display-nickname").innerText = username;
-                document.getElementById("login-screen").style.display = "none";
-                document.getElementById("game-container").style.display = "block";
-                renderPitch();
+                document.getElementById("nickname-input").value = savedName;
             }
+            
+            // Oyuna girmeden önce yüklemeyi ZORUNLU kılıyoruz.
+            loadLargeDatabase(); 
         };
 
         function normalizeMetin(metin) {
@@ -593,7 +612,7 @@
             filtered.slice(0, 15).forEach(player => {
                 const div = document.createElement("div");
                 div.className = "player-item";
-                div.innerHTML = `<img src="${player.img}" alt="face"> ${player.name}`;
+                div.innerHTML = `<img src="${player.img}" alt="face"> ${player.name} (${player.pos})`;
                 div.onclick = () => attemptPlacePlayer(player);
                 resultsBox.appendChild(div);
             });
