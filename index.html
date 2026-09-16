@@ -3,585 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bil Bakalım Kim? / Günün Gridi</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=VT323&display=swap" rel="stylesheet">
+    <title>Grid 11</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: radial-gradient(circle at center, #0a1f12 0%, #020604 100%);
-            color: #ecf0f1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        #flash-effect {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: #fff;
-            z-index: 99999;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s ease-out;
-        }
-
-        .flash-active { opacity: 1 !important; transition: none !important; }
-
-        #login-screen {
-            text-align: center;
-            background: rgba(15, 45, 25, 0.6);
-            backdrop-filter: blur(15px);
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 90%;
-            max-width: 350px;
-        }
-
-        #login-screen h1 {
-            margin-top: 0;
-            color: #2ecc71;
-            font-size: 32px;
-            font-weight: 800;
-        }
-
-        #nickname-input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 18px;
-            font-family: inherit;
-            box-sizing: border-box;
-            outline: none;
-            text-align: center;
-        }
-
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; background: radial-gradient(circle at center, #0a1f12 0%, #020604 100%); color: #ecf0f1; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        #login-screen { text-align: center; background: rgba(15, 45, 25, 0.6); backdrop-filter: blur(15px); padding: 40px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 350px; }
+        #login-screen h1 { font-weight: 800; margin-top: 0; color: #2ecc71; letter-spacing: 2px; font-size: 32px; }
+        #nickname-input { width: 100%; padding: 15px; margin-bottom: 20px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 16px; text-align: center; outline: none; }
         #nickname-input:focus { border-color: #2ecc71; }
-
-        .play-btn {
-            background: #555;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            width: 100%;
-            border-radius: 8px;
-            font-size: 20px;
-            font-weight: 800;
-            cursor: not-allowed;
-            transition: 0.3s;
-            font-family: inherit;
-        }
-
-        .play-btn:disabled { background: #555 !important; transform: none !important; }
-        .play-btn.active-btn { background: #27ae60; cursor: pointer; }
-        .play-btn.active-btn:hover { background: #2ecc71; transform: translateY(-2px); }
-
-        #db-status {
-            font-size: 14px;
-            color: #f1c40f;
-            margin-top: 15px;
-            font-weight: 600;
-        }
-
-        #game-container {
-            display: none;
-            width: 100%;
-            max-width: 600px;
-            padding: 15px;
-            box-sizing: border-box;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 0 10px;
-        }
-
-        .user-info { font-size: 20px; color: #2ecc71; font-weight: 800; }
-        .score-box {
-            background: rgba(0,0,0,0.5);
-            padding: 6px 16px;
-            border-radius: 8px;
-            color: #f1c40f;
-            border: 1px solid rgba(241, 196, 15, 0.3);
-            font-size: 18px;
-            font-weight: 800;
-        }
-
-        .pitch {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 15px 5px;
-        }
-
-        .row {
-            display: flex;
-            justify-content: space-evenly;
-            margin-bottom: 15px;
-        }
-
-        .slot-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 80px;
-            text-align: center;
-        }
-
-        .slot {
-            width: 65px;
-            height: 85px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px dashed rgba(255,255,255,0.3);
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: 0.3s;
-            background-size: cover;
-            background-position: center top;
-            font-size: 24px;
-            color: rgba(255,255,255,0.3);
-        }
-
-        .slot.filled {
-            border: 2px solid #2ecc71;
-            color: transparent; 
-        }
-
-        .pos-badge {
-            background: #000;
-            font-size: 12px;
-            font-weight: 800;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: -10px;
-            z-index: 2;
-            border: 1px solid #f1c40f;
-            color: #f1c40f;
-        }
-
-        .criteria {
-            font-size: 11px;
-            margin-top: 6px;
-            color: #bdc3c7;
-            line-height: 1.1;
-            font-weight: 600;
-        }
-
-        .player-name {
-            font-size: 10px;
-            font-weight: 800;
-            margin-top: 4px;
-            color: #fff;
-            display: none;
-            background: rgba(0,0,0,0.7);
-            padding: 2px 4px;
-            border-radius: 4px;
-        }
-
-        #final-share-btn {
-            display: none;
-            width: 100%;
-            margin-top: 20px;
-            padding: 12px;
-            background: #fff;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-size: 20px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        #final-share-btn:hover { background: #2ecc71; color: #fff; }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-
-        #search-modal-content {
-            background: #111;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .search-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            color: #2ecc71;
-            font-size: 20px;
-            font-weight: 800;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 16px;
-            font-family: inherit;
-            box-sizing: border-box;
-            outline: none;
-            background: rgba(0,0,0,0.4);
-            color: #fff;
-        }
-
-        input[type="text"]:focus { border-color: #2ecc71; }
-        input[type="text"].error { border-color: #e74c3c; animation: shake 0.4s; }
-
-        .results {
-            max-height: 250px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .player-item {
-            display: flex;
-            align-items: center;
-            background: rgba(255,255,255,0.05);
-            padding: 10px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .player-item img {
-            width: 35px;
-            height: 35px;
-            border-radius: 5px;
-            margin-right: 15px;
-            object-fit: cover;
-        }
-
-        #result-modal-content {
-            background: transparent;
-            padding: 0;
-            border: none;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        #ss-card {
-            background-color: #0b1c11; 
-            border: 2px solid #2ecc71; 
-            border-radius: 12px;
-            padding: 20px;
-            width: 85%; 
-            max-width: 400px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.9);
-        }
-
-        .close-btn {
-            margin-top: 20px;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 8px;
-            background: #fff;
-            color: #000;
-            font-family: inherit;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: 800;
-        }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            50% { transform: translateX(6px); }
-            75% { transform: translateX(-6px); }
-            100% { transform: translateX(0); }
-        }
+        .play-btn { background: #27ae60; color: white; border: none; padding: 15px 20px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .play-btn:hover { background: #2ecc71; transform: translateY(-2px); }
+        #game-container { display: none; width: 100%; max-width: 600px; padding: 20px; box-sizing: border-box; }
+        #capture-area { padding: 30px 20px; border-radius: 20px; background: linear-gradient(135deg, #0a1f12 0%, #020604 100%); border: 3px solid #f1c40f; box-shadow: 0 15px 40px rgba(0,0,0,0.8); }
+        .capture-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(241, 196, 15, 0.3); }
+        .capture-header h2 { margin: 0; color: #f1c40f; font-size: 24px; font-weight: 800; text-transform: uppercase; }
+        .score-badge { display: inline-block; margin-top: 10px; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 25px; font-weight: 800; color: #2ecc71; border: 1px solid #2ecc71; }
+        .pitch { background: rgba(255, 255, 255, 0.02); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 15px; }
+        .row { display: flex; justify-content: space-evenly; width: 100%; }
+        .slot-container { display: flex; flex-direction: column; align-items: center; width: 80px; text-align: center; }
+        .slot { width: 60px; height: 85px; background: rgba(0, 0, 0, 0.6); border: 2px dashed rgba(255,255,255,0.3); border-radius: 8px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.3s; background-size: cover; background-position: center top; font-size: 24px; color: rgba(255,255,255,0.3); }
+        .slot.filled { border: 2px solid #2ecc71; color: transparent; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.2); }
+        .pos-badge { background: #000; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-top: -10px; z-index: 2; border: 1px solid #f1c40f; color: #f1c40f; }
+        .criteria { font-size: 9px; margin-top: 5px; color: #bdc3c7; font-weight: 600; line-height: 1.1; }
+        .player-name { font-size: 10px; font-weight: 800; margin-top: 4px; color: #fff; display: none; background: rgba(0,0,0,0.6); padding: 2px 4px; border-radius: 4px; }
+        #final-share-btn { display: none; width: 100%; margin-top: 20px; padding: 15px; background: #fff; color: #000; border: none; border-radius: 8px; font-size: 18px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        #final-share-btn:hover { background: #f1c40f; transform: scale(1.02); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 10; }
+        #search-modal-content { background: #111; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .search-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #2ecc71; font-weight: 800; }
+        input[type="text"].search-input { width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; margin-bottom: 15px; background: rgba(0,0,0,0.4); color: #fff; outline: none; }
+        input[type="text"].search-input.error { border-color: #e74c3c; animation: shake 0.4s; }
+        .results { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; text-align: left; }
+        .player-item { display: flex; align-items: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .player-item img { width: 35px; height: 35px; border-radius: 5px; margin-right: 10px; object-fit: cover; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        
+        #result-modal-content { background: #111; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        #generated-image-preview { width: 100%; border-radius: 12px; border: 2px solid #f1c40f; margin: 15px 0; }
+        .social-btn { padding: 12px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; color: #fff; width: 100%; margin-bottom: 10px; }
+        .btn-download { background: #34495e; }
+        .close-btn { background: transparent; color: #e74c3c; border: 1px solid #e74c3c; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: 800; }
     </style>
 </head>
 <body>
 
-    <div id="flash-effect"></div>
-
     <div id="login-screen">
-        <h1>GÜNÜN GRİDİ</h1>
-        <input type="text" id="nickname-input" placeholder="Nickini gir..." autocomplete="off">
-        <button class="play-btn" id="start-btn" onclick="startGame()" disabled>OYNA</button>
-        <div id="db-status">Veritabanı Yükleniyor... Lütfen Bekle ⏳</div>
+        <h1 id="loading-text">YÜKLENİYOR...</h1>
+        <div id="login-form" style="display:none;">
+            <h1>GRID 11</h1>
+            <input type="text" id="nickname-input" placeholder="Nickname girin..." autocomplete="off">
+            <button class="play-btn" onclick="startGame()">OYNA</button>
+        </div>
     </div>
 
     <div id="game-container">
-        <div class="header">
-            <div class="user-info" id="display-nickname">---</div>
-            <div class="score-box">Skor: <span id="scoreVal">0</span></div>
+        <div id="capture-area">
+            <div class="capture-header">
+                <h2 id="capture-title">---'in İlk 11'i</h2>
+                <div class="score-badge">Deneme: <span id="scoreVal">0</span></div>
+            </div>
+            <div class="pitch" id="pitch"></div>
         </div>
-
-        <div class="pitch" id="pitch"></div>
-        <button id="final-share-btn" onclick="showShareScreen()">PAYLAŞ</button>
+        <button id="final-share-btn" onclick="generateShareImage()">PAYLAŞ</button>
     </div>
 
     <div class="modal" id="search-modal">
         <div id="search-modal-content">
             <div class="search-header">
-                <span id="search-pos-title">ARANIYOR</span>
-                <span style="cursor: pointer; color:#e74c3c;" onclick="closeModal('search-modal')">✖</span>
+                <span id="search-pos-title">Oyuncu Ara</span>
+                <span style="font-size: 14px; color: #bdc3c7; cursor: pointer;" onclick="closeModal('search-modal')">✖</span>
             </div>
-            <input type="text" id="searchInput" placeholder="Topçu ara (Örn: Cunha)..." autocomplete="off">
+            <div style="font-size:11px; color:#f1c40f; margin-bottom:10px;" id="search-criteria-hint"></div>
+            <input type="text" id="searchInput" class="search-input" placeholder="Futbolcu ara..." autocomplete="off">
             <div class="results" id="resultsList"></div>
         </div>
     </div>
 
     <div class="modal" id="result-modal">
         <div id="result-modal-content">
-            <div id="ss-card">
-                <h2 id="ss-title" style="margin: 0 0 10px 0; color: #fff; text-align: center; text-transform: uppercase;">---'in Kadrosu</h2>
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <span id="ss-score" style="background:#f1c40f; color:#000; padding:4px 15px; border-radius:20px; font-weight:800;">Skor: 0</span>
-                </div>
-                <div id="ss-pitch-container"></div>
-            </div>
-            <button class="close-btn" onclick="shareOrDownload()">İNDİR / PAYLAŞ</button>
-            <button class="close-btn" style="background:#e74c3c; color:#fff; margin-top:10px;" onclick="closeModal('result-modal')">KAPAT</button>
+            <h2 style="margin:0; color:#f1c40f;">TEBRİKLER!</h2>
+            <img id="generated-image-preview" src="">
+            <button class="social-btn btn-download" onclick="downloadImage()">Görseli İndir</button>
+            <button class="close-btn" onclick="closeModal('result-modal')">Kapat</button>
         </div>
     </div>
 
     <script>
+        let dbPlayers = [];
         let score = 0;
         let filledCount = 0;
         let activeSlotId = null;
+        let activeCriteria = null;
         let username = "";
-        
-        let dailyFormationLayout = [];
-        let todayGrid = {};
-        let dbPlayers = []; 
+        let generatedImageData = "";
+        let gunlukKadro = [];
 
-        // Virgülleri güvenli ayıran hızlı parselleyici
-        const parseRow = (str) => {
-            let arr = [], quote = false, val = '';
-            for (let i = 0; i < str.length; i++) {
-                let cc = str[i];
-                if (cc === '"') quote = !quote;
-                else if (cc === ',' && !quote) { arr.push(val.trim()); val = ''; }
-                else val += cc;
-            }
-            arr.push(val.trim());
-            return arr;
-        };
+        // Diziliş Havuzu
+        const dizilisler = [
+            { ad: "4-4-2", hatlar: [ ["ST", "ST"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"] ] },
+            { ad: "4-3-3", hatlar: [ ["LW", "ST", "RW"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"] ] },
+            { ad: "4-2-3-1", hatlar: [ ["ST"], ["LM", "CAM", "RM"], ["CDM", "CDM"], ["LB", "CB", "CB", "RB"], ["GK"] ] },
+            { ad: "3-5-2", hatlar: [ ["ST", "ST"], ["LM", "CM", "CDM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"] ] },
+            { ad: "5-3-2", hatlar: [ ["ST", "ST"], ["CM", "CM", "CM"], ["LWB", "CB", "CB", "CB", "RWB"], ["GK"] ] },
+            { ad: "4-5-1", hatlar: [ ["ST"], ["LM", "CM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"] ] }
+        ];
 
-                async function loadLargeDatabase() {
-            const statusEl = document.getElementById("db-status");
-            const startBtn = document.getElementById("start-btn");
-            
-            try {
-                const response = await fetch('./players.csv?v=' + new Date().getTime());
-                
-                if(!response.ok) throw new Error("CSV bulunamadı!");
-                
-                const dataText = await response.text();
-                const lines = dataText.split('\n');
-                const headers = parseRow(lines[0].toLowerCase());
-                
-                // Başlıkların kaçıncı sütunda olduğunu dinamik buluyoruz
-                const nameIdx = headers.indexOf('name');
-                const posIdx = headers.indexOf('position');
-                const subPosIdx = headers.indexOf('sub_position');
-                const nationIdx = headers.indexOf('country_of_citizenship');
-                const imgIdx = headers.indexOf('image_url'); // FOTOĞRAF SÜTUNUNU BULDUK
+        // Görev Havuzu
+        const ulkeler = [
+            { ad: "Brezilyalı", kod: "Brazil" }, { ad: "Arjantinli", kod: "Argentina" }, { ad: "Uruguaylı", kod: "Uruguay" },
+            { ad: "Alman", kod: "Germany" }, { ad: "Fransız", kod: "France" }, { ad: "İngiliz", kod: "England" },
+            { ad: "İspanyol", kod: "Spain" }, { ad: "İtalyan", kod: "Italy" }, { ad: "Hollandalı", kod: "Netherlands" },
+            { ad: "Belçikalı", kod: "Belgium" }, { ad: "Türk", kod: "Turkey" }, { ad: "Nijeryalı", kod: "Nigeria" },
+            { ad: "Senegalli", kod: "Senegal" }, { ad: "Fildişili", kod: "Cote d'Ivoire" }, { ad: "Ganalı", kod: "Ghana" }
+        ];
 
-                const loadedPlayers = [];
-
-                for(let i = 1; i < lines.length; i++) {
-                    const line = lines[i];
-                    if(!line || line.trim() === "") continue;
-                    
-                    const cols = parseRow(line);
-                    
-                    const pName = cols[nameIdx] || '';
-                    const pNat = (cols[nationIdx] || '').toLowerCase();
-                    const pPos = ((cols[posIdx] || '') + " " + (cols[subPosIdx] || '')).toUpperCase();
-                    
-                    // Fotoğraf varsa al, yoksa silüet bas
-                    const pImg = (imgIdx > -1 && cols[imgIdx]) ? cols[imgIdx].replace(/"/g, '') : "https://cdn.sofifa.net/players/notfound_0_120.png";
-
-                    if(pName.length < 2) continue;
-
-                    let pos = "CM";
-                    if(pPos.includes("GOALKEEPER")) pos = "GK";
-                    else if(pPos.includes("CENTRE-BACK")) pos = "CB";
-                    else if(pPos.includes("LEFT-BACK")) pos = "LB";
-                    else if(pPos.includes("RIGHT-BACK")) pos = "RB";
-                    else if(pPos.includes("MIDFIELD") || pPos.includes("CENTRAL")) pos = "CM";
-                    else if(pPos.includes("WINGER") || pPos.includes("LEFT") || pPos.includes("RIGHT")) pos = "RM";
-                    else if(pPos.includes("FORWARD") || pPos.includes("ATTACK") || pPos.includes("STRIKER")) pos = "ST";
-
-                    const traits = ["herkes"];
-                    if(pNat.includes("turkey") || pNat.includes("türkiye")) traits.push("turkiye");
-                    if(pNat.includes("brazil")) traits.push("brezilya");
-                    if(pNat.includes("argentina")) traits.push("arjantin");
-                    if(pNat.includes("germany")) traits.push("almanya");
-                    if(pNat.includes("england")) traits.push("ingiltere");
-                    if(pNat.includes("spain")) traits.push("ispanya");
-
-                    // Artık orijinal resmi sisteme gönderiyoruz
-                    loadedPlayers.push({ name: pName, pos: pos, img: pImg, traits: traits });
-                }
-
-                dbPlayers = loadedPlayers;
-                
-                if(dbPlayers.length > 0) {
-                    statusEl.innerText = `✓ ${dbPlayers.length} Topçu Yüklendi! (Fotoğraflarla)`;
-                    statusEl.style.color = "#2ecc71";
-                    startBtn.disabled = false;
-                    startBtn.classList.add("active-btn");
-                } else {
-                    throw new Error("Dosya boş okundu.");
-                }
-                
-            } catch (err) {
-                console.log("Hata:", err);
-                statusEl.innerText = "HATA: CSV dosyası okunurken sorun çıktı. Sayfayı yenile.";
-                statusEl.style.color = "#e74c3c";
-            }
-        }
-
-
-        const dizilisler = {
-            "442": [["ST", "ST"], ["RM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "433": [["RM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "4231": [["ST"], ["RM", "CM", "RM"], ["CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "352": [["ST", "ST"], ["RM", "CM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]]
-        };
-
-        const kriterler = {
-            GK: [{ text: "Herhangi Bir Kaleci", trait: "herkes" }],
-            FB: [{ text: "Herhangi Bir Bek", trait: "herkes" }],
-            CB: [{ text: "Herhangi Bir Stoper", trait: "herkes" }],
-            CM: [{ text: "Herhangi Bir Orta Saha", trait: "herkes" }],
-            WING: [{ text: "Herhangi Bir Kanat", trait: "herkes" }],
-            ST: [{ text: "Herhangi Bir Forvet", trait: "herkes" }],
-            GENEL: [
-                { text: "Brezilyalı", trait: "brezilya" },
-                { text: "Arjantinli", trait: "arjantin" },
-                { text: "Türk", trait: "turkiye" },
-                { text: "Alman", trait: "almanya" },
-                { text: "İngiliz", trait: "ingiltere" },
-                { text: "İspanyol", trait: "ispanya" }
+        const kriterHavuzu = {
+            "GK": [
+                { metin: "3+ Kariyer Golü", kontrol: (p) => parseInt(p.goals) >= 3 },
+                { metin: "Kariyer Boyu Tek Takım", kontrol: (p) => parseInt(p.player_club_id) === 1 }
+            ],
+            "DEF": [ // CB, LB, RB, LWB, RWB
+                { metin: "5+ Kırmızı Kart", kontrol: (p) => parseInt(p.red_cards) >= 5 },
+                { metin: "7+ Kırmızı Kart", kontrol: (p) => parseInt(p.red_cards) >= 7 },
+                { metin: "8+ Farklı Takımda Oynamış", kontrol: (p) => parseInt(p.player_club_id) >= 8 }
+            ],
+            "MID": [ // CM, CDM, CAM, RM, LM, RW, LW
+                { metin: "200+ Asist", kontrol: (p) => parseInt(p.assists) >= 200 },
+                { metin: "5+ Kırmızı Kart", kontrol: (p) => parseInt(p.red_cards) >= 5 },
+                { metin: "Kariyer Boyu Tek Takım", kontrol: (p) => parseInt(p.player_club_id) === 1 }
+            ],
+            "ATT": [ // ST, CF
+                { metin: "400+ Gol", kontrol: (p) => parseInt(p.goals) >= 400 },
+                { metin: "200+ Asist", kontrol: (p) => parseInt(p.assists) >= 200 },
+                { metin: "8+ Farklı Takımda Oynamış", kontrol: (p) => parseInt(p.player_club_id) >= 8 }
             ]
         };
 
-        function mulberry32(a) {
-            return function() {
-              var t = a += 0x6D2B79F5;
-              t = Math.imul(t ^ t >>> 15, t | 1);
-              t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-              return ((t ^ t >>> 14) >>> 0) / 4294967296;
-            }
-        }
+        // Ülkeleri genel kriterlere ekliyoruz
+        const genelKriterler = [];
+        ulkeler.forEach(u => {
+            genelKriterler.push({ metin: u.ad, kontrol: (p) => p.country_of_citizenship === u.kod });
+        });
 
-        function generateDailyGrid() {
+        // Seed fonksiyonu (Tarihe göre rastgelelik)
+        function getDailySeed() {
             const today = new Date();
-            const dateString = today.getFullYear() + "" + today.getMonth() + "" + today.getDate();
-            const rnd = mulberry32(parseInt(dateString));
-
-            const formKeys = Object.keys(dizilisler);
-            const selKey = formKeys[Math.floor(rnd() * formKeys.length)];
-            dailyFormationLayout = dizilisler[selKey];
-
-            let slotIndex = 0;
-            todayGrid = {};
-
-            dailyFormationLayout.forEach(rowArr => {
-                rowArr.forEach(pos => {
-                    let pool = kriterler.GENEL; 
-                    const selectedCriterion = pool[Math.floor(rnd() * pool.length)];
-                    
-                    todayGrid[`slot-${slotIndex}`] = {
-                        pos: pos,
-                        criteriaText: selectedCriterion.text,
-                        reqTrait: selectedCriterion.trait
-                    };
-                    slotIndex++;
-                });
-            });
+            return today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
         }
 
-        window.onload = () => {
-            generateDailyGrid(); 
-            
-            const savedName = localStorage.getItem("grid11_username");
-            if (savedName) {
-                document.getElementById("nickname-input").value = savedName;
-            }
-            
-            // Oyuna girmeden önce yüklemeyi ZORUNLU kılıyoruz.
-            loadLargeDatabase(); 
+        function seededRandom(seed) {
+            var t = seed += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        }
+
+        // CSV Verisini Çekme
+        window.onload = function() {
+            fetch('grid_players.csv')
+                .then(response => {
+                    if (!response.ok) throw new Error("Veritabanı bulunamadı");
+                    return response.text();
+                })
+                .then(text => {
+                    parseCSV(text);
+                    document.getElementById("loading-text").style.display = "none";
+                    document.getElementById("login-form").style.display = "block";
+                    gunlukKuraCek();
+                })
+                .catch(err => {
+                    alert("Veriler yüklenirken hata oldu kanka. grid_players.csv dosyasını GitHub'a yüklediğinden emin ol.");
+                    console.error(err);
+                });
         };
 
-        function normalizeMetin(metin) {
-            return metin.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i')
-                        .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        function parseCSV(text) {
+            const lines = text.split('\n');
+            const headers = lines[0].split(',');
+            
+            for(let i = 1; i < lines.length; i++) {
+                if(!lines[i].trim()) continue;
+                // Virgülleri güvenli ayırma (isim içinde virgül olma ihtimaline karşı basit bypass)
+                const currentline = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                if(currentline.length === headers.length) {
+                    let player = {};
+                    for(let j=0; j<headers.length; j++){
+                        player[headers[j].trim()] = currentline[j].replace(/"/g, '').trim();
+                    }
+                    dbPlayers.push(player);
+                }
+            }
+        }
+
+        function getMevkiGrup(pos) {
+            if(pos === "GK") return "GK";
+            if(["CB", "LB", "RB", "LWB", "RWB"].includes(pos)) return "DEF";
+            if(["CM", "CDM", "CAM", "RM", "LM", "RW", "LW"].includes(pos)) return "MID";
+            return "ATT";
+        }
+
+        function gunlukKuraCek() {
+            let seed = getDailySeed();
+            
+            // Rastgele diziliş
+            const dizilisIndex = Math.floor(seededRandom(seed++) * dizilisler.length);
+            const secilenDizilis = dizilisler[dizilisIndex];
+            
+            let idCounter = 0;
+            gunlukKadro = [];
+
+            secilenDizilis.hatlar.forEach(hat => {
+                let hatDizisi = [];
+                hat.forEach(pos => {
+                    let grup = getMevkiGrup(pos);
+                    
+                    // Ya pozisyona özel kriter, ya da genel ülke kriteri seç (%50 şans)
+                    let secilenKriter;
+                    if(seededRandom(seed++) > 0.5) {
+                        let havuz = kriterHavuzu[grup];
+                        secilenKriter = havuz[Math.floor(seededRandom(seed++) * havuz.length)];
+                    } else {
+                        secilenKriter = genelKriterler[Math.floor(seededRandom(seed++) * genelKriterler.length)];
+                    }
+
+                    hatDizisi.push({
+                        id: "slot-" + idCounter++,
+                        pos: pos,
+                        kriterMetin: secilenKriter.metin,
+                        kontrol: secilenKriter.kontrol
+                    });
+                });
+                gunlukKadro.push(hatDizisi);
+            });
         }
 
         function startGame() {
             const input = document.getElementById("nickname-input").value.trim();
-            if(input.length < 3) return alert("En az 3 harf girmelisin.");
-            
+            if(input.length < 3) {
+                alert("En az 3 harfli bir nickname gir reis.");
+                return;
+            }
             username = input;
-            localStorage.setItem("grid11_username", username);
-            document.getElementById("display-nickname").innerText = username;
+            document.getElementById("capture-title").innerText = `${username}'in İlk 11'i`;
             document.getElementById("login-screen").style.display = "none";
             document.getElementById("game-container").style.display = "block";
+            
             renderPitch();
         }
 
         function renderPitch() {
             const pitch = document.getElementById("pitch");
             pitch.innerHTML = "";
-            let slotIndex = 0;
-
-            dailyFormationLayout.forEach(rowArr => {
+            
+            gunlukKadro.forEach(hat => {
                 const rowDiv = document.createElement("div");
                 rowDiv.className = "row";
-                rowArr.forEach(pos => {
-                    const slotId = `slot-${slotIndex}`;
-                    const data = todayGrid[slotId];
-                    rowDiv.innerHTML += `
-                        <div class="slot-container" id="${slotId}-container">
-                            <div class="slot" id="${slotId}-btn" onclick="openSearch('${slotId}')">+</div>
-                            <div class="pos-badge">${data.pos}</div>
-                            <div class="player-name" id="${slotId}-name"></div>
-                            <div class="criteria">${data.criteriaText}</div>
+                
+                hat.forEach(slot => {
+                    const slotHtml = `
+                        <div class="slot-container">
+                            <div class="slot" id="${slot.id}-btn" onclick="openSearch('${slot.id}')">+</div>
+                            <div class="pos-badge">${slot.pos}</div>
+                            <div class="player-name" id="${slot.id}-name"></div>
+                            <div class="criteria">${slot.kriterMetin}</div>
                         </div>
                     `;
-                    slotIndex++;
+                    rowDiv.innerHTML += slotHtml;
                 });
                 pitch.appendChild(rowDiv);
             });
@@ -589,12 +277,20 @@
 
         function openSearch(slotId) {
             if (document.getElementById(`${slotId}-btn`).classList.contains("filled")) return;
+            
             activeSlotId = slotId;
-            document.getElementById("search-pos-title").innerText = todayGrid[slotId].pos + " ARANIYOR";
+            let targetSlot = null;
+            gunlukKadro.forEach(hat => hat.forEach(s => { if(s.id === slotId) targetSlot = s; }));
+            activeCriteria = targetSlot;
+
+            document.getElementById("search-pos-title").innerText = targetSlot.pos + " ARANIYOR";
+            document.getElementById("search-criteria-hint").innerText = "Şart: " + targetSlot.kriterMetin;
+            
             const input = document.getElementById("searchInput");
             input.value = "";
             input.classList.remove("error");
             document.getElementById("resultsList").innerHTML = "";
+            
             document.getElementById("search-modal").style.display = "flex";
             setTimeout(() => input.focus(), 10);
         }
@@ -603,37 +299,44 @@
             document.getElementById(modalId).style.display = "none";
         }
 
+        function normalizeText(text) {
+            return text.replace(/İ/g, 'i').replace(/I/g, 'i').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
         document.getElementById("searchInput").addEventListener("input", function(e) {
-            const val = normalizeMetin(e.target.value);
+            const val = normalizeText(e.target.value);
             const resultsBox = document.getElementById("resultsList");
             resultsBox.innerHTML = "";
             this.classList.remove("error");
 
             if (val.length < 2) return;
 
-            const filtered = dbPlayers.filter(p => normalizeMetin(p.name).includes(val));
+            // Filtreleme: İsme göre ara
+            const filtered = dbPlayers.filter(p => normalizeText(p.name).includes(val)).slice(0, 30); // En fazla 30 sonuç getir
 
-            filtered.slice(0, 15).forEach(player => {
+            filtered.forEach(player => {
                 const div = document.createElement("div");
                 div.className = "player-item";
-                div.innerHTML = `<img src="${player.img}" alt="face"> ${player.name} (${player.pos})`;
-                div.onclick = () => attemptPlacePlayer(player);
+                // Proxy ile resim çekme
+                let proxyImg = "https://api.allorigins.win/raw?url=" + player.image_url;
+                div.innerHTML = `<img src="${proxyImg}" onerror="this.src='https://cdn.sofifa.net/players/notfound_0_120.png'"> ${player.name}`;
+                div.onclick = () => attemptPlacePlayer(player, proxyImg);
                 resultsBox.appendChild(div);
             });
         });
 
-        function attemptPlacePlayer(player) {
+        function attemptPlacePlayer(player, proxyImg) {
             score++;
             document.getElementById("scoreVal").innerText = score;
             
-            const reqTrait = todayGrid[activeSlotId].reqTrait;
             const inputField = document.getElementById("searchInput");
 
-            if (player.traits.includes(reqTrait) || reqTrait === "herkes") {
+            // Kriter kontrolü
+            if (activeCriteria.kontrol(player)) {
                 const slotBtn = document.getElementById(`${activeSlotId}-btn`);
                 const nameLabel = document.getElementById(`${activeSlotId}-name`);
                 
-                slotBtn.style.backgroundImage = `url(${player.img})`;
+                slotBtn.style.backgroundImage = `url(${proxyImg})`;
                 slotBtn.classList.add("filled");
                 slotBtn.innerHTML = "";
                 nameLabel.innerText = player.name;
@@ -655,27 +358,32 @@
             }
         }
 
-        function showShareScreen() {
-            const flash = document.getElementById("flash-effect");
-            flash.classList.add("flash-active");
-            setTimeout(() => flash.classList.remove("flash-active"), 80);
-
-            document.getElementById("ss-title").innerText = `${username}'in Kadrosu`;
-            document.getElementById("ss-score").innerText = `Skor: ${score}`;
-            document.getElementById("ss-pitch-container").innerHTML = document.getElementById("pitch").innerHTML;
+        function generateShareImage() {
+            const captureArea = document.getElementById("capture-area");
+            const shareBtn = document.getElementById("final-share-btn");
+            shareBtn.innerText = "YÜKLENİYOR...";
             
-            document.getElementById("result-modal").style.display = "flex";
+            html2canvas(captureArea, {
+                backgroundColor: "#020604",
+                scale: 2,
+                useCORS: true,
+                allowTaint: true
+            }).then(canvas => {
+                generatedImageData = canvas.toDataURL("image/jpeg", 0.9);
+                document.getElementById("generated-image-preview").src = generatedImageData;
+                document.getElementById("result-modal").style.display = "flex";
+                shareBtn.innerText = "PAYLAŞ";
+            }).catch(err => {
+                alert("Fotoğraf oluşturulurken bir hata oldu hacım: " + err);
+                shareBtn.innerText = "PAYLAŞ";
+            });
         }
 
-        function shareOrDownload() {
-            const card = document.getElementById("ss-card");
-            html2canvas(card, { backgroundColor: "#020604", scale: 2 }).then(canvas => {
-                const imgData = canvas.toDataURL("image/jpeg", 0.9);
-                const link = document.createElement('a');
-                link.download = `Grid11_${username}_Skor${score}.jpg`;
-                link.href = imgData;
-                link.click();
-            });
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = `Grid11_${username}_Skor${score}.jpg`;
+            link.href = generatedImageData;
+            link.click();
         }
     </script>
 </body>
