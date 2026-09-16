@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grid 11</title>
+    <title>Bil Bakalım Kim? / Günün Gridi</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
-            font-family: 'VT323', monospace;
+            font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
             background: radial-gradient(circle at center, #0a1f12 0%, #020604 100%);
@@ -29,10 +30,7 @@
             transition: opacity 0.4s ease-out;
         }
 
-        .flash-active {
-            opacity: 1 !important;
-            transition: none !important;
-        }
+        .flash-active { opacity: 1 !important; transition: none !important; }
 
         #login-screen {
             text-align: center;
@@ -49,9 +47,8 @@
         #login-screen h1 {
             margin-top: 0;
             color: #2ecc71;
-            letter-spacing: 2px;
-            font-size: 46px;
-            font-weight: normal;
+            font-size: 32px;
+            font-weight: 800;
         }
 
         #nickname-input {
@@ -62,7 +59,7 @@
             border: 1px solid rgba(255,255,255,0.2);
             border-radius: 8px;
             color: #fff;
-            font-size: 20px;
+            font-size: 18px;
             font-family: inherit;
             box-sizing: border-box;
             outline: none;
@@ -78,17 +75,17 @@
             padding: 12px 20px;
             width: 100%;
             border-radius: 8px;
-            font-size: 24px;
+            font-size: 20px;
+            font-weight: 800;
             cursor: pointer;
             transition: 0.3s;
             font-family: inherit;
-            text-transform: uppercase;
         }
 
         .play-btn:hover { background: #2ecc71; transform: translateY(-2px); }
 
         #db-status {
-            font-size: 16px;
+            font-size: 14px;
             color: #f1c40f;
             margin-top: 15px;
             font-weight: 600;
@@ -110,45 +107,41 @@
             padding: 0 10px;
         }
 
-        .user-info {
-            font-size: 22px;
-            color: #2ecc71;
-            text-transform: uppercase;
-        }
-
+        .user-info { font-size: 20px; color: #2ecc71; font-weight: 800; }
         .score-box {
             background: rgba(0,0,0,0.5);
             padding: 6px 16px;
             border-radius: 8px;
             color: #f1c40f;
             border: 1px solid rgba(241, 196, 15, 0.3);
-            font-size: 20px;
+            font-size: 18px;
+            font-weight: 800;
         }
 
         .pitch {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 12px 5px;
+            padding: 15px 5px;
         }
 
         .row {
             display: flex;
             justify-content: space-evenly;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .slot-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 75px;
+            width: 80px;
             text-align: center;
         }
 
         .slot {
-            width: 58px;
-            height: 74px;
+            width: 65px;
+            height: 85px;
             background: rgba(0, 0, 0, 0.6);
             border: 2px dashed rgba(255,255,255,0.3);
             border-radius: 8px;
@@ -170,7 +163,8 @@
 
         .pos-badge {
             background: #000;
-            font-size: 14px;
+            font-size: 12px;
+            font-weight: 800;
             padding: 2px 6px;
             border-radius: 4px;
             margin-top: -10px;
@@ -180,15 +174,14 @@
         }
 
         .criteria {
-            font-size: 12px;
-            margin-top: 4px;
+            font-size: 11px;
+            margin-top: 6px;
             color: #bdc3c7;
-            line-height: 1;
-            padding: 2px;
+            line-height: 1.1;
+            font-weight: 600;
         }
 
         .player-name {
-            font-family: 'Poppins', sans-serif;
             font-size: 10px;
             font-weight: 800;
             margin-top: 4px;
@@ -208,18 +201,13 @@
             color: #000;
             border: none;
             border-radius: 8px;
-            font-size: 24px;
+            font-size: 20px;
+            font-weight: 800;
             cursor: pointer;
             transition: 0.3s;
-            font-family: inherit;
-            text-transform: uppercase;
-            letter-spacing: 2px;
         }
 
-        #final-share-btn:hover {
-            background: #2ecc71;
-            color: #fff;
-        }
+        #final-share-btn:hover { background: #2ecc71; color: #fff; }
 
         .modal {
             display: none;
@@ -239,7 +227,6 @@
             width: 90%;
             max-width: 400px;
             border: 1px solid rgba(255,255,255,0.1);
-            text-align: center;
         }
 
         .search-header {
@@ -248,71 +235,8 @@
             align-items: center;
             margin-bottom: 15px;
             color: #2ecc71;
-            font-size: 22px;
-        }
-
-        #result-modal-content {
-            background: transparent;
-            padding: 0;
-            border: none;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #ss-card {
-            background-color: #0b1c11; 
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath fill='%23f1c40f' fill-opacity='0.06' d='M13.99 9.25l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zm0-8.5l2.6 2.6-2.6 2.6-2.6-2.6 2.6-2.6zM0 13.99l2.6-2.6 2.6 2.6-2.6 2.6L0 13.99zm28 0l-2.6-2.6-2.6 2.6 2.6 2.6 2.6-2.6zM13.99 28l-2.6-2.6 2.6-2.6 2.6 2.6-2.6 2.6zM4.6 4.6l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zm18.8 0l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zM4.6 23.4l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3zm18.8 0l1.3 1.3-1.3 1.3-1.3-1.3 1.3-1.3z'/%3E%3C/svg%3E");
-            border: 2px solid #2ecc71; 
-            border-radius: 12px;
-            padding: 16px;
-            width: 85%; 
-            max-width: 350px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.9);
-            pointer-events: none;
-            transform: scale(0.6) rotate(-10deg);
-            opacity: 0;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        #ss-inner {
-            background: linear-gradient(135deg, #0a1f12 0%, #020604 100%);
-            border-radius: 8px;
-            padding: 10px 5px;
-            border: 1px solid rgba(46, 204, 113, 0.3);
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-        }
-
-        #result-modal.show #ss-card {
-            transform: scale(0.90) rotate(3deg);
-            opacity: 1;
-        }
-
-        #ss-header {
-            text-align: center;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        #ss-title {
-            margin: 0;
-            color: #fff;
-            font-size: 26px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        #ss-score {
-            display: inline-block;
-            margin-top: 6px;
-            background: #f1c40f;
-            padding: 4px 14px;
-            border-radius: 20px;
-            color: #000;
-            font-size: 18px;
+            font-size: 20px;
+            font-weight: 800;
         }
 
         input[type="text"] {
@@ -321,7 +245,7 @@
             border: 1px solid rgba(255,255,255,0.2);
             border-radius: 8px;
             margin-bottom: 15px;
-            font-size: 18px;
+            font-size: 16px;
             font-family: inherit;
             box-sizing: border-box;
             outline: none;
@@ -333,24 +257,22 @@
         input[type="text"].error { border-color: #e74c3c; animation: shake 0.4s; }
 
         .results {
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 5px;
-            text-align: left;
         }
 
         .player-item {
             display: flex;
             align-items: center;
             background: rgba(255,255,255,0.05);
-            padding: 8px 12px;
+            padding: 10px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-family: 'Poppins', sans-serif;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 14px;
         }
 
         .player-item img {
@@ -359,6 +281,26 @@
             border-radius: 5px;
             margin-right: 15px;
             object-fit: cover;
+        }
+
+        #result-modal-content {
+            background: transparent;
+            padding: 0;
+            border: none;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #ss-card {
+            background-color: #0b1c11; 
+            border: 2px solid #2ecc71; 
+            border-radius: 12px;
+            padding: 20px;
+            width: 85%; 
+            max-width: 400px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.9);
         }
 
         .close-btn {
@@ -370,13 +312,17 @@
             color: #000;
             font-family: inherit;
             cursor: pointer;
-            font-size: 22px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: 0.2s;
+            font-size: 18px;
+            font-weight: 800;
         }
-        
-        .close-btn:hover { background: #ccc; }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-6px); }
+            100% { transform: translateX(0); }
+        }
     </style>
 </head>
 <body>
@@ -384,10 +330,10 @@
     <div id="flash-effect"></div>
 
     <div id="login-screen">
-        <h1>BIL BAKALIM KIM? FUTBOL</h1>
-        <input type="text" id="nickname-input" placeholder="Nickname girin..." autocomplete="off">
-        <button class="play-btn" id="play-btn-id" onclick="startGame()" disabled style="background:#555; cursor:not-allowed;">OYNA</button>
-        <div id="db-status">Sistemdeki Veritabanı Okunuyor... ⏳</div>
+        <h1>GÜNÜN GRİDİ</h1>
+        <input type="text" id="nickname-input" placeholder="Nickini gir..." autocomplete="off">
+        <button class="play-btn" id="start-btn" onclick="startGame()">OYNA</button>
+        <div id="db-status">Veritabanı Yükleniyor... ⏳</div>
     </div>
 
     <div id="game-container">
@@ -395,17 +341,18 @@
             <div class="user-info" id="display-nickname">---</div>
             <div class="score-box">Skor: <span id="scoreVal">0</span></div>
         </div>
+
         <div class="pitch" id="pitch"></div>
-        <button id="final-share-btn" onclick="showShareScreen()">PAYLAS</button>
+        <button id="final-share-btn" onclick="showShareScreen()">PAYLAŞ</button>
     </div>
 
     <div class="modal" id="search-modal">
         <div id="search-modal-content">
             <div class="search-header">
                 <span id="search-pos-title">ARANIYOR</span>
-                <span style="cursor: pointer;" onclick="closeModal('search-modal')">X</span>
+                <span style="cursor: pointer; color:#e74c3c;" onclick="closeModal('search-modal')">✖</span>
             </div>
-            <input type="text" id="searchInput" placeholder="Futbolcu ara..." autocomplete="off">
+            <input type="text" id="searchInput" placeholder="Topçu ara..." autocomplete="off">
             <div class="results" id="resultsList"></div>
         </div>
     </div>
@@ -413,15 +360,14 @@
     <div class="modal" id="result-modal">
         <div id="result-modal-content">
             <div id="ss-card">
-                <div id="ss-inner">
-                    <div id="ss-header">
-                        <h2 id="ss-title">---'in Ilk 11'i</h2>
-                        <div id="ss-score">Skor: 0</div>
-                    </div>
-                    <div id="ss-pitch-container"></div>
+                <h2 id="ss-title" style="margin: 0 0 10px 0; color: #fff; text-align: center; text-transform: uppercase;">---'in Kadrosu</h2>
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <span id="ss-score" style="background:#f1c40f; color:#000; padding:4px 15px; border-radius:20px; font-weight:800;">Skor: 0</span>
                 </div>
+                <div id="ss-pitch-container"></div>
             </div>
-            <button class="close-btn" onclick="closeModal('result-modal')">KAPAT</button>
+            <button class="close-btn" onclick="shareOrDownload()">İNDİR / PAYLAŞ</button>
+            <button class="close-btn" style="background:#e74c3c; color:#fff; margin-top:10px;" onclick="closeModal('result-modal')">KAPAT</button>
         </div>
     </div>
 
@@ -435,196 +381,96 @@
         let todayGrid = {};
         let dbPlayers = []; 
 
+        // CSV Yükleme Motoru (GitHub'dan okur)
+        async function loadLargeDatabase() {
+            try {
+                // Burada direkt senin yüklediğin dosyayı okuyoruz
+                const response = await fetch('./players.csv');
+                if(!response.ok) throw new Error("CSV bulunamadı!");
+                
+                const dataText = await response.text();
+                const lines = dataText.split('\n');
+                const loadedPlayers = [];
+
+                // İlk satırdaki başlıkları bulalım ki sütunların yeri değişse bile kod patlamasın
+                const headers = lines[0].toLowerCase().split(',');
+                const nameIdx = headers.indexOf('name');
+                const posIdx = headers.indexOf('position') > -1 ? headers.indexOf('position') : headers.indexOf('sub_position');
+                const nationIdx = headers.indexOf('country_of_citizenship');
+
+                // CSV'yi tarayıp kendi formatımıza çeviriyoruz
+                for(let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if(!line) continue;
+                    
+                    // Virgülle ayır ama tırnak içindeki virgülleri es geç
+                    const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    if(cols.length < Math.max(nameIdx, posIdx, nationIdx)) continue;
+
+                    const pName = cols[nameIdx] ? cols[nameIdx].replace(/"/g, '') : '';
+                    const pNat = cols[nationIdx] ? cols[nationIdx].replace(/"/g, '').toLowerCase() : '';
+                    const pPos = cols[posIdx] ? cols[posIdx].replace(/"/g, '').toUpperCase() : '';
+
+                    if(!pName || pName.length < 2) continue;
+
+                    // Transfermarkt pozisyonlarını bizim formata çevir
+                    let pos = "CM";
+                    if(pPos.includes("GOALKEEPER")) pos = "GK";
+                    else if(pPos.includes("CENTRE-BACK")) pos = "CB";
+                    else if(pPos.includes("LEFT-BACK")) pos = "LB";
+                    else if(pPos.includes("RIGHT-BACK")) pos = "RB";
+                    else if(pPos.includes("MIDFIELD")) pos = "CM";
+                    else if(pPos.includes("WINGER") || pPos.includes("LEFT") || pPos.includes("RIGHT")) pos = "RM"; // Kanatlar
+                    else if(pPos.includes("FORWARD") || pPos.includes("ATTACK")) pos = "ST";
+
+                    // Mevki ve ülkeye göre otomatik etiketler (Geliştirebilirsin)
+                    const traits = ["herkes"];
+                    if(pNat.includes("turkey") || pNat.includes("türkiye")) traits.push("turkiye");
+                    if(pNat.includes("brazil")) traits.push("brezilya");
+                    if(pNat.includes("argentina")) traits.push("arjantin");
+                    if(pNat.includes("germany")) traits.push("almanya");
+                    if(pNat.includes("england")) traits.push("ingiltere");
+                    if(pNat.includes("spain")) traits.push("ispanya");
+
+                    // Varsayılan resim (Transfermarkt CSV'sinde resim URL'si olmadığı için silüet kullanıyoruz)
+                    const imgUrl = "https://cdn.sofifa.net/players/notfound_0_120.png";
+
+                    loadedPlayers.push({ name: pName, pos: pos, img: imgUrl, traits: traits });
+                }
+
+                dbPlayers = loadedPlayers;
+                document.getElementById("db-status").innerText = `✓ ${dbPlayers.length} Topçu Yüklendi!`;
+                document.getElementById("db-status").style.color = "#2ecc71";
+            } catch (err) {
+                console.log("Hata:", err);
+                document.getElementById("db-status").innerText = "CSV Okunamadı! Dosya adını kontrol et.";
+                document.getElementById("db-status").style.color = "#e74c3c";
+            }
+        }
+
         const dizilisler = {
-            "433": [["LM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "4231": [["ST"], ["LM", "CM", "RM"], ["CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "442": [["ST", "ST"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "451": [["ST"], ["LM", "CM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "460": [["CM", "CM"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "343": [["LM", "ST", "RM"], ["LM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]],
-            "352": [["ST", "ST"], ["LM", "CM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]],
-            "541": [["ST"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "CB", "RB"], ["GK"]],
-            "532": [["ST", "ST"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "CB", "RB"], ["GK"]]
+            "442": [["ST", "ST"], ["RM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "433": [["RM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "4231": [["ST"], ["RM", "CM", "RM"], ["CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "352": [["ST", "ST"], ["RM", "CM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]]
         };
 
         const kriterler = {
-            GK: [
-                { text: "3'ten Fazla Gol Atmis", trait: "gk_3_gol" },
-                { text: "Altin Eldiven Kazanmis", trait: "altin_eldiven" },
-                { text: "190cm'den Kisa Boylu", trait: "boy_kisa_190" }
-            ],
-            FB: [
-                { text: "5'ten Fazla Kirmizi Kart Gormus", trait: "fb_5_kirmizi" }
-            ],
-            CB: [
-                { text: "7'den Fazla Kirmizi Kart Gormus", trait: "cb_7_kirmizi" },
-                { text: "190cm'den Uzun Boylu", trait: "boy_uzun_190" }
-            ],
-            CM: [
-                { text: "Ballon d'Or Kazanmis", trait: "ballondor" }
-            ],
-            WING: [
-                { text: "Ballon d'Or Kazanmis", trait: "ballondor" },
-                { text: "200'den Fazla Asist Yapmis", trait: "asist_200" },
-                { text: "2+ Asist Kralligi", trait: "asist_kral_2" }
-            ],
-            ST: [
-                { text: "400+ Gol", trait: "gol_400" },
-                { text: "200+ Asist", trait: "asist_200" },
-                { text: "Altin Ayakkabi Kazanmis", trait: "altin_ayakkabi" },
-                { text: "3+ Gol Kralligi", trait: "gol_krali_3" },
-                { text: "UCL'de 30+ Gol", trait: "ucl_30_gol" },
-                { text: "50+ Kafa Golu", trait: "kafa_golu_50" },
-                { text: "4 Buyukler Disi Super Lig Gol Krali", trait: "anadolu_gol_krali" }
-            ],
+            GK: [{ text: "Herhangi Bir Kaleci", trait: "herkes" }],
+            FB: [{ text: "Herhangi Bir Bek", trait: "herkes" }],
+            CB: [{ text: "Herhangi Bir Stoper", trait: "herkes" }],
+            CM: [{ text: "Herhangi Bir Orta Saha", trait: "herkes" }],
+            WING: [{ text: "Herhangi Bir Kanat", trait: "herkes" }],
+            ST: [{ text: "Herhangi Bir Forvet", trait: "herkes" }],
             GENEL: [
-                { text: "3+ UCL Sampiyonlugu", trait: "ucl_3" },
-                { text: "Dunya Kupasi Kazanmis", trait: "wc_winner" },
-                { text: "Kariyer Boyu Tek Takim", trait: "tek_takim" },
-                { text: "Super Lig'de Oynamis", trait: "super_lig" },
-                { text: "Asyali", trait: "asyali" },
-                { text: "Avrupali", trait: "avrupali" },
-                { text: "Afrikali", trait: "afrikali" },
-                { text: "Guney Amerikali", trait: "guney_amerikali" },
-                { text: "Bundesliga'da 5+ Sezon Oynamis", trait: "5_sezon_bundesliga" },
-                { text: "Premier Lig'de 5+ Sezon Oynamis", trait: "5_sezon_pl" },
-                { text: "La Liga'da 5+ Sezon Oynamis", trait: "5_sezon_laliga" },
-                { text: "Milli Takimla 100+ Mac", trait: "milli_100" },
-                { text: "Brezilyali", trait: "brezilya" },
-                { text: "Alman", trait: "almanya" },
-                { text: "Ingiliz", trait: "ingiltere" },
-                { text: "Ispanyol", trait: "ispanya" },
-                { text: "Turk", trait: "turkiye" },
+                { text: "Brezilyalı", trait: "brezilya" },
                 { text: "Arjantinli", trait: "arjantin" },
-                { text: "Max Piyasa Degeri 75M Ve Uzeri", trait: "pd_75_ust" },
-                { text: "Max Piyasa Degeri 75M Altinda", trait: "pd_75_alt" }
+                { text: "Türk", trait: "turkiye" },
+                { text: "Alman", trait: "almanya" },
+                { text: "İngiliz", trait: "ingiltere" },
+                { text: "İspanyol", trait: "ispanya" }
             ]
         };
-
-        const efsaneler = {
-            "Mauro Icardi": ["gol_400", "super_lig", "arjantin", "guney_amerikali"],
-            "Lionel Messi": ["ballondor", "asist_200", "altin_ayakkabi", "gol_400", "ucl_30_gol", "wc_winner", "ucl_3", "guney_amerikali", "arjantin", "milli_100"],
-            "Cristiano Ronaldo": ["ballondor", "gol_400", "ucl_30_gol", "kafa_golu_50", "ucl_3", "milli_100", "avrupali", "portekiz"],
-            "Fernando Muslera": ["gk_3_gol", "super_lig", "ztk_winner", "milli_100", "uruguay", "guney_amerikali"],
-            "Manuel Neuer": ["altin_eldiven", "wc_winner", "ucl_3", "milli_100", "almanya", "avrupali", "5_sezon_bundesliga"],
-            "Luka Modric": ["ballondor", "ucl_3", "milli_100", "avrupali", "5_sezon_laliga"],
-            "Burak Yilmaz": ["super_lig", "anadolu_gol_krali", "turkiye", "avrupali"],
-            "Sergio Ramos": ["cb_7_kirmizi", "fb_5_kirmizi", "kafa_golu_50", "ucl_3", "wc_winner", "ispanya", "avrupali", "5_sezon_laliga", "milli_100"]
-        };
-
-        const parseRow = (str) => {
-            let arr = [], quote = false, val = '';
-            for (let i = 0; i < str.length; i++) {
-                let cc = str[i];
-                if (cc === '"') quote = !quote;
-                else if (cc === ',' && !quote) { arr.push(val.trim()); val = ''; }
-                else val += cc;
-            }
-            arr.push(val.trim());
-            return arr;
-        };
-
-        async function fetchLocalDatabase() {
-            const statusEl = document.getElementById("db-status");
-            try {
-                // DIŞARIYA BAĞLANMAK YOK. Direkt senin yüklediğin players.csv dosyasını okur.
-                const response = await fetch('players.csv');
-                
-                if (!response.ok) {
-                    throw new Error("Sitenin icinde players.csv dosyasi bulunamadi!");
-                }
-
-                const csvData = await response.text();
-                statusEl.innerText = "Sistem İçi Veriler İşleniyor...";
-
-                const lines = csvData.split('\n');
-                const headers = parseRow(lines[0]);
-                
-                const hIdx = {
-                    id: headers.indexOf("player_id"),
-                    name: headers.indexOf("name"),
-                    pos: headers.indexOf("position"),
-                    sub: headers.indexOf("sub_position"),
-                    nat: headers.indexOf("country_of_citizenship"),
-                    hgt: headers.indexOf("height_in_cm"),
-                    mv: headers.indexOf("highest_market_value_in_eur"),
-                    league: headers.indexOf("current_club_domestic_league_id")
-                };
-
-                const loaded = [];
-                
-                for(let i=1; i<lines.length; i++) {
-                    const line = lines[i];
-                    if(!line || line.trim() === "") continue;
-                    
-                    const cols = parseRow(line);
-                    if(cols.length < 5) continue;
-
-                    const pName = cols[hIdx.name] || "";
-                    if(pName.length < 2) continue;
-
-                    const pId = cols[hIdx.id] || "";
-                    const pPos = (cols[hIdx.pos] || "").toUpperCase();
-                    const pSub = (cols[hIdx.sub] || "").toUpperCase();
-                    const pNat = (cols[hIdx.nat] || "").toLowerCase();
-                    const pLig = (cols[hIdx.league] || "").toUpperCase();
-                    const pHgt = parseInt(cols[hIdx.hgt]) || 0;
-                    const pMv = parseInt(cols[hIdx.mv]) || 0;
-
-                    const pImg = pId ? `https://img.a.transfermarkt.technology/portrait/header/${pId}.jpg?lm=1` : "https://cdn.sofifa.net/players/176/993/16_120.png";
-
-                    let pos = "CM";
-                    if(pPos === "ATTACK" || pSub.includes("CENTRE-FORWARD")) pos = "ST";
-                    if(pSub.includes("LEFT-BACK")) pos = "LB";
-                    if(pSub.includes("RIGHT-BACK")) pos = "RB";
-                    if(pPos === "DEFENDER" || pSub.includes("CENTRE-BACK")) pos = "CB";
-                    if(pPos === "GOALKEEPER") pos = "GK";
-                    if(pSub.includes("LEFT WINGER")) pos = "LM";
-                    if(pSub.includes("RIGHT WINGER")) pos = "RM";
-
-                    const tr = [];
-                    if(pNat.includes("turkey") || pNat.includes("türk")) tr.push("turkiye", "avrupali");
-                    if(pNat.includes("brazil")) tr.push("brezilya", "guney_amerikali");
-                    if(pNat.includes("germany")) tr.push("almanya", "avrupali");
-                    if(pNat.includes("spain")) tr.push("ispanya", "avrupali");
-                    if(pNat.includes("england")) tr.push("ingiltere", "avrupali");
-                    if(pNat.includes("france")) tr.push("fransa", "avrupali");
-                    if(pNat.includes("italy")) tr.push("italya", "avrupali");
-                    if(pNat.includes("netherlands") || pNat.includes("holland")) tr.push("hollanda", "eredivisie");
-                    if(pNat.includes("argentina")) tr.push("arjantin", "guney_amerikali");
-                    if(pNat.includes("nigeria") || pNat.includes("senegal") || pNat.includes("cote d'ivoire") || pNat.includes("ghana")) tr.push("afrikali");
-
-                    if(pHgt > 190) tr.push("boy_uzun_190");
-                    if(pHgt > 0 && pHgt < 190) tr.push("boy_kisa_190");
-
-                    if(pMv >= 75000000) tr.push("pd_75_ust");
-                    else tr.push("pd_75_alt");
-
-                    if(pLig === "TR1") tr.push("super_lig");
-                    if(pLig === "GB1") tr.push("5_sezon_pl");
-                    if(pLig === "L1") tr.push("5_sezon_bundesliga");
-                    if(pLig === "ES1") tr.push("5_sezon_laliga");
-
-                    if(efsaneler[pName]) tr.push(...efsaneler[pName]);
-
-                    loaded.push({ name: pName, pos: pos, img: pImg, traits: [...new Set(tr)] });
-                }
-
-                dbPlayers = loaded;
-                statusEl.innerText = `✓ Yerel Veritabanı: ${dbPlayers.length} Topçu Çekildi!`;
-                statusEl.style.color = "#2ecc71";
-                
-                const btn = document.getElementById("play-btn-id");
-                btn.disabled = false;
-                btn.style.background = "#27ae60";
-                btn.style.cursor = "pointer";
-
-            } catch (error) {
-                console.log(error);
-                statusEl.innerText = "HATA: Lütfen 'players.csv' dosyasını GitHub'a yüklediğinden emin ol!";
-                statusEl.style.color = "#e74c3c";
-            }
-        }
 
         function mulberry32(a) {
             return function() {
@@ -644,36 +490,14 @@
             const selKey = formKeys[Math.floor(rnd() * formKeys.length)];
             dailyFormationLayout = dizilisler[selKey];
 
-            const usedTraits = new Set();
             let slotIndex = 0;
             todayGrid = {};
 
             dailyFormationLayout.forEach(rowArr => {
                 rowArr.forEach(pos => {
-                    let pool = [];
-                    if(pos === 'GK') pool = kriterler.GK;
-                    else if(['LB','RB'].includes(pos)) pool = kriterler.FB;
-                    else if(pos === 'CB') pool = kriterler.CB;
-                    else if(pos === 'CM') pool = kriterler.CM;
-                    else if(['LM','RM'].includes(pos)) pool = kriterler.WING;
-                    else if(pos === 'ST') pool = kriterler.ST;
-
-                    let selectedCriterion = null;
-                    let attempts = 0;
+                    let pool = kriterler.GENEL; // Demo için her yere genel kriter basıyoruz
+                    const selectedCriterion = pool[Math.floor(rnd() * pool.length)];
                     
-                    while(attempts < 200) {
-                        const useGeneral = (rnd() > 0.4); 
-                        const currentPool = (useGeneral || pool.length === 0) ? kriterler.GENEL : pool;
-                        
-                        selectedCriterion = currentPool[Math.floor(rnd() * currentPool.length)];
-                        
-                        if(!usedTraits.has(selectedCriterion.trait)) {
-                            usedTraits.add(selectedCriterion.trait);
-                            break;
-                        }
-                        attempts++;
-                    }
-
                     todayGrid[`slot-${slotIndex}`] = {
                         pos: pos,
                         criteriaText: selectedCriterion.text,
@@ -686,40 +510,32 @@
 
         window.onload = () => {
             generateDailyGrid(); 
-            fetchLocalDatabase(); 
+            loadLargeDatabase(); 
             
             const savedName = localStorage.getItem("grid11_username");
             if (savedName) {
                 username = savedName;
-                document.getElementById("nickname-input").value = username;
+                document.getElementById("display-nickname").innerText = username;
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("game-container").style.display = "block";
+                renderPitch();
             }
         };
 
         function normalizeMetin(metin) {
             return metin.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i')
-                        .replace(/Ş/g, 's').replace(/ş/g, 's')
-                        .replace(/Ğ/g, 'g').replace(/ğ/g, 'g')
-                        .replace(/Ü/g, 'u').replace(/ü/g, 'u')
-                        .replace(/Ö/g, 'o').replace(/ö/g, 'o')
-                        .replace(/Ç/g, 'c').replace(/ç/g, 'c')
                         .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
         function startGame() {
             const input = document.getElementById("nickname-input").value.trim();
-            if(input.length < 3) {
-                alert("En az 3 harfli bir nickname gir.");
-                return;
-            }
+            if(input.length < 3) return alert("En az 3 harf girmelisin.");
+            
             username = input;
-            
             localStorage.setItem("grid11_username", username);
-            
             document.getElementById("display-nickname").innerText = username;
-            
             document.getElementById("login-screen").style.display = "none";
             document.getElementById("game-container").style.display = "block";
-            
             renderPitch();
         }
 
@@ -731,11 +547,9 @@
             dailyFormationLayout.forEach(rowArr => {
                 const rowDiv = document.createElement("div");
                 rowDiv.className = "row";
-                
                 rowArr.forEach(pos => {
                     const slotId = `slot-${slotIndex}`;
                     const data = todayGrid[slotId];
-                    
                     rowDiv.innerHTML += `
                         <div class="slot-container" id="${slotId}-container">
                             <div class="slot" id="${slotId}-btn" onclick="openSearch('${slotId}')">+</div>
@@ -752,29 +566,18 @@
 
         function openSearch(slotId) {
             if (document.getElementById(`${slotId}-btn`).classList.contains("filled")) return;
-            
             activeSlotId = slotId;
-            const pos = todayGrid[slotId].pos;
-            
-            document.getElementById("search-pos-title").innerText = pos + " ARANIYOR";
+            document.getElementById("search-pos-title").innerText = todayGrid[slotId].pos + " ARANIYOR";
             const input = document.getElementById("searchInput");
             input.value = "";
             input.classList.remove("error");
             document.getElementById("resultsList").innerHTML = "";
-            
             document.getElementById("search-modal").style.display = "flex";
             setTimeout(() => input.focus(), 10);
         }
 
         function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.remove("show");
-            
-            if(modalId === 'result-modal') {
-                setTimeout(() => { modal.style.display = "none"; }, 400);
-            } else {
-                modal.style.display = "none";
-            }
+            document.getElementById(modalId).style.display = "none";
         }
 
         document.getElementById("searchInput").addEventListener("input", function(e) {
@@ -790,7 +593,7 @@
             filtered.slice(0, 15).forEach(player => {
                 const div = document.createElement("div");
                 div.className = "player-item";
-                div.innerHTML = `<img src="${player.img}" alt="face" onerror="this.src='https://cdn.sofifa.net/players/176/993/16_120.png'"> ${player.name}`;
+                div.innerHTML = `<img src="${player.img}" alt="face"> ${player.name}`;
                 div.onclick = () => attemptPlacePlayer(player);
                 resultsBox.appendChild(div);
             });
@@ -803,7 +606,7 @@
             const reqTrait = todayGrid[activeSlotId].reqTrait;
             const inputField = document.getElementById("searchInput");
 
-            if (player.traits.includes(reqTrait)) {
+            if (player.traits.includes(reqTrait) || reqTrait === "herkes") {
                 const slotBtn = document.getElementById(`${activeSlotId}-btn`);
                 const nameLabel = document.getElementById(`${activeSlotId}-name`);
                 
@@ -832,23 +635,24 @@
         function showShareScreen() {
             const flash = document.getElementById("flash-effect");
             flash.classList.add("flash-active");
-            
-            setTimeout(() => {
-                flash.classList.remove("flash-active");
-            }, 80);
+            setTimeout(() => flash.classList.remove("flash-active"), 80);
 
-            document.getElementById("ss-title").innerText = `${username}'in Ilk 11'i`;
+            document.getElementById("ss-title").innerText = `${username}'in Kadrosu`;
             document.getElementById("ss-score").innerText = `Skor: ${score}`;
+            document.getElementById("ss-pitch-container").innerHTML = document.getElementById("pitch").innerHTML;
             
-            const originalPitch = document.getElementById("pitch");
-            document.getElementById("ss-pitch-container").innerHTML = originalPitch.innerHTML;
-            
-            const modal = document.getElementById("result-modal");
-            modal.style.display = "flex";
-            
-            setTimeout(() => {
-                modal.classList.add("show");
-            }, 50);
+            document.getElementById("result-modal").style.display = "flex";
+        }
+
+        function shareOrDownload() {
+            const card = document.getElementById("ss-card");
+            html2canvas(card, { backgroundColor: "#020604", scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL("image/jpeg", 0.9);
+                const link = document.createElement('a');
+                link.download = `Grid11_${username}_Skor${score}.jpg`;
+                link.href = imgData;
+                link.click();
+            });
         }
     </script>
 </body>
