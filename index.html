@@ -396,12 +396,11 @@
             return arr;
         };
 
-        async function loadLargeDatabase() {
+                async function loadLargeDatabase() {
             const statusEl = document.getElementById("db-status");
             const startBtn = document.getElementById("start-btn");
             
             try {
-                // Zaman damgası ekleyerek tarayıcının önbelleği (cache) atlamasını sağlıyoruz
                 const response = await fetch('./players.csv?v=' + new Date().getTime());
                 
                 if(!response.ok) throw new Error("CSV bulunamadı!");
@@ -415,6 +414,7 @@
                 const posIdx = headers.indexOf('position');
                 const subPosIdx = headers.indexOf('sub_position');
                 const nationIdx = headers.indexOf('country_of_citizenship');
+                const imgIdx = headers.indexOf('image_url'); // FOTOĞRAF SÜTUNUNU BULDUK
 
                 const loadedPlayers = [];
 
@@ -427,6 +427,9 @@
                     const pName = cols[nameIdx] || '';
                     const pNat = (cols[nationIdx] || '').toLowerCase();
                     const pPos = ((cols[posIdx] || '') + " " + (cols[subPosIdx] || '')).toUpperCase();
+                    
+                    // Fotoğraf varsa al, yoksa silüet bas
+                    const pImg = (imgIdx > -1 && cols[imgIdx]) ? cols[imgIdx].replace(/"/g, '') : "https://cdn.sofifa.net/players/notfound_0_120.png";
 
                     if(pName.length < 2) continue;
 
@@ -447,14 +450,14 @@
                     if(pNat.includes("england")) traits.push("ingiltere");
                     if(pNat.includes("spain")) traits.push("ispanya");
 
-                    const imgUrl = "https://cdn.sofifa.net/players/notfound_0_120.png";
-                    loadedPlayers.push({ name: pName, pos: pos, img: imgUrl, traits: traits });
+                    // Artık orijinal resmi sisteme gönderiyoruz
+                    loadedPlayers.push({ name: pName, pos: pos, img: pImg, traits: traits });
                 }
 
                 dbPlayers = loadedPlayers;
                 
                 if(dbPlayers.length > 0) {
-                    statusEl.innerText = `✓ ${dbPlayers.length} Topçu Yüklendi!`;
+                    statusEl.innerText = `✓ ${dbPlayers.length} Topçu Yüklendi! (Fotoğraflarla)`;
                     statusEl.style.color = "#2ecc71";
                     startBtn.disabled = false;
                     startBtn.classList.add("active-btn");
@@ -464,10 +467,11 @@
                 
             } catch (err) {
                 console.log("Hata:", err);
-                statusEl.innerText = "HATA: CSV dosyası okunurken sorun çıktı. GitHub Pages'in güncellenmesi için 2-3 dakika bekleyip sayfayı yenile.";
+                statusEl.innerText = "HATA: CSV dosyası okunurken sorun çıktı. Sayfayı yenile.";
                 statusEl.style.color = "#e74c3c";
             }
         }
+
 
         const dizilisler = {
             "442": [["ST", "ST"], ["RM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
