@@ -354,7 +354,7 @@
                 <span id="search-pos-title">ARANIYOR</span>
                 <span style="cursor: pointer; color:#e74c3c;" onclick="closeModal('search-modal')">✖</span>
             </div>
-            <input type="text" id="searchInput" placeholder="Topçu ara (Örn: Cunha)..." autocomplete="off">
+            <input type="text" id="searchInput" placeholder="Topçu ara (Örn: Icardi)..." autocomplete="off">
             <div class="results" id="resultsList"></div>
         </div>
     </div>
@@ -399,6 +399,17 @@
             const statusEl = document.getElementById("db-status");
             const startBtn = document.getElementById("start-btn");
             
+            const yedekKadro = [
+                { name: "Dani Osvaldo", pos: "ST", img: "https://wsrv.nl/?url=img.a.transfermarkt.technology/portrait/header/37329.jpg&w=120&h=160&fit=cover", traits: ["herkes", "italya", "boy_uzun_190"] },
+                { name: "Mauro Icardi", pos: "ST", img: "https://wsrv.nl/?url=img.a.transfermarkt.technology/portrait/header/112595.jpg&w=120&h=160&fit=cover", traits: ["herkes", "arjantin", "turkiye", "pd_75_alt"] },
+                { name: "Leroy Sane", pos: "RM", img: "https://wsrv.nl/?url=img.a.transfermarkt.technology/portrait/header/192565.jpg&w=120&h=160&fit=cover", traits: ["herkes", "almanya", "pd_75_ust"] },
+                { name: "Abdulkerim Bardakci", pos: "CB", img: "https://wsrv.nl/?url=img.a.transfermarkt.technology/portrait/header/185257.jpg&w=120&h=160&fit=cover", traits: ["herkes", "turkiye", "boy_uzun_190"] },
+                { name: "Kyle Walker", pos: "RB", img: "https://wsrv.nl/?url=img.a.transfermarkt.technology/portrait/header/61839.jpg&w=120&h=160&fit=cover", traits: ["herkes", "ingiltere", "yas_35_ust"] },
+                { name: "Gregor Kobel", pos: "GK", img: "https://wsrv.nl/?url=img.a.transfermarkt.technology/portrait/header/413473.jpg&w=120&h=160&fit=cover", traits: ["herkes", "boy_uzun_190"] },
+                { name: "Gabriel Sara", pos: "CM", img: "https://wsrv.nl/?url=img.a.transfermarkt.technology/portrait/header/545084.jpg&w=120&h=160&fit=cover", traits: ["herkes", "brezilya", "yas_23_alt"] },
+                { name: "Jordi Alba", pos: "LB", img: "https://wsrv.nl/?url=img.a.transfermarkt.technology/portrait/header/69751.jpg&w=120&h=160&fit=cover", traits: ["herkes", "ispanya", "boy_kisa_190", "yas_35_ust"] }
+            ];
+
             try {
                 const response = await fetch('./players.csv?v=' + new Date().getTime());
                 if(!response.ok) throw new Error("CSV bulunamadı!");
@@ -413,8 +424,17 @@
                 const nationIdx = headers.indexOf('country_of_citizenship');
                 const imgIdx = headers.indexOf('image_url');
                 const idIdx = headers.indexOf('player_id');
+                
+                // Colab'dan gelen ekstra verilerin dinamik kontrolü
+                const heightIdx = headers.indexOf('height_in_cm');
+                const maxValIdx = headers.indexOf('highest_market_value_in_eur');
+                const dobIdx = headers.indexOf('date_of_birth');
+                const goalsIdx = headers.findIndex(h => h.includes('goal'));
+                const redCardsIdx = headers.findIndex(h => h.includes('red'));
+                const capsIdx = headers.findIndex(h => h.includes('cap') || h.includes('national'));
 
                 const loadedPlayers = [];
+                const currentYear = new Date().getFullYear();
 
                 for(let i = 1; i < lines.length; i++) {
                     const line = lines[i];
@@ -435,7 +455,6 @@
                         pImg = `https://img.a.transfermarkt.technology/portrait/header/${cols[idIdx]}.jpg?lm=1`;
                     }
                     
-                    // Görsel güvenlik duvarını aşan sihirli kod bölümü
                     if (pImg.includes('transfermarkt')) {
                         pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
                     }
@@ -450,12 +469,64 @@
                     else if(pPos.includes("FORWARD") || pPos.includes("ATTACK") || pPos.includes("STRIKER")) pos = "ST";
 
                     const traits = ["herkes"];
+                    
+                    // Ülke Kriterleri
                     if(pNat.includes("turkey") || pNat.includes("türkiye")) traits.push("turkiye");
                     if(pNat.includes("brazil")) traits.push("brezilya");
                     if(pNat.includes("argentina")) traits.push("arjantin");
                     if(pNat.includes("germany")) traits.push("almanya");
                     if(pNat.includes("england")) traits.push("ingiltere");
                     if(pNat.includes("spain")) traits.push("ispanya");
+                    if(pNat.includes("france")) traits.push("fransa");
+                    if(pNat.includes("italy")) traits.push("italya");
+                    if(pNat.includes("portugal")) traits.push("portekiz");
+                    if(pNat.includes("netherlands") || pNat.includes("holland")) traits.push("hollanda");
+                    if(pNat.includes("belgium")) traits.push("belcika");
+                    if(pNat.includes("uruguay")) traits.push("uruguay");
+                    if(pNat.includes("colombia")) traits.push("kolombiya");
+                    if(pNat.includes("senegal")) traits.push("senegal");
+                    if(pNat.includes("morocco")) traits.push("fas");
+                    if(pNat.includes("nigeria")) traits.push("nijerya");
+                    if(pNat.includes("cameroon")) traits.push("kamerun");
+                    if(pNat.includes("ivory coast") || pNat.includes("cote d'ivoire")) traits.push("fildisi");
+                    if(pNat.includes("croatia")) traits.push("hirvatistan");
+                    if(pNat.includes("japan")) traits.push("japonya");
+
+                    // Colab verilerine dayalı özel kriterler
+                    if (heightIdx > -1 && cols[heightIdx]) {
+                        const h = parseInt(cols[heightIdx]);
+                        if (h > 190) traits.push("boy_uzun_190");
+                        if (h < 190) traits.push("boy_kisa_190");
+                    }
+                    
+                    if (maxValIdx > -1 && cols[maxValIdx]) {
+                        const val = parseInt(cols[maxValIdx]);
+                        if (val >= 75000000) traits.push("pd_75_ust");
+                        if (val < 75000000) traits.push("pd_75_alt");
+                    }
+                    
+                    if (dobIdx > -1 && cols[dobIdx] && cols[dobIdx].length >= 4) {
+                        const year = parseInt(cols[dobIdx].substring(0, 4));
+                        const age = currentYear - year;
+                        if (age <= 23) traits.push("yas_23_alt");
+                        if (age >= 35) traits.push("yas_35_ust");
+                    }
+                    
+                    if (goalsIdx > -1 && cols[goalsIdx]) {
+                        const g = parseInt(cols[goalsIdx]);
+                        if (g >= 400) traits.push("gol_400");
+                    }
+                    
+                    if (redCardsIdx > -1 && cols[redCardsIdx]) {
+                        const rc = parseInt(cols[redCardsIdx]);
+                        if (rc >= 7) traits.push("cb_7_kirmizi");
+                    }
+                    
+                    if (capsIdx > -1 && cols[capsIdx]) {
+                        const c = parseInt(cols[capsIdx]);
+                        if (c >= 100) traits.push("milli_100");
+                        if (c === 0) traits.push("milli_yok");
+                    }
 
                     loadedPlayers.push({ name: pName, pos: pos, img: pImg, traits: traits });
                 }
@@ -469,8 +540,11 @@
                     startBtn.classList.add("active-btn");
                 }
             } catch (err) {
-                statusEl.innerText = "HATA: CSV dosyası okunurken sorun çıktı.";
-                statusEl.style.color = "#e74c3c";
+                dbPlayers = yedekKadro;
+                statusEl.innerText = "⚠ CSV yok, test kadrosu yüklendi!";
+                statusEl.style.color = "#f39c12"; 
+                startBtn.disabled = false;
+                startBtn.classList.add("active-btn");
             }
         }
 
@@ -482,19 +556,41 @@
         };
 
         const kriterler = {
-            GK: [{ text: "Herhangi Bir Kaleci", trait: "herkes" }],
-            FB: [{ text: "Herhangi Bir Bek", trait: "herkes" }],
-            CB: [{ text: "Herhangi Bir Stoper", trait: "herkes" }],
-            CM: [{ text: "Herhangi Bir Orta Saha", trait: "herkes" }],
-            WING: [{ text: "Herhangi Bir Kanat", trait: "herkes" }],
-            ST: [{ text: "Herhangi Bir Forvet", trait: "herkes" }],
             GENEL: [
                 { text: "Brezilyalı", trait: "brezilya" },
                 { text: "Arjantinli", trait: "arjantin" },
                 { text: "Türk", trait: "turkiye" },
                 { text: "Alman", trait: "almanya" },
                 { text: "İngiliz", trait: "ingiltere" },
-                { text: "İspanyol", trait: "ispanya" }
+                { text: "İspanyol", trait: "ispanya" },
+                { text: "Fransız", trait: "fransa" },
+                { text: "İtalyan", trait: "italya" },
+                { text: "Portekizli", trait: "portekiz" },
+                { text: "Hollandalı", trait: "hollanda" },
+                { text: "Belçikalı", trait: "belcika" },
+                { text: "Uruguaylı", trait: "uruguay" },
+                { text: "Kolombiyalı", trait: "kolombiya" },
+                { text: "Senegalli", trait: "senegal" },
+                { text: "Faslı", trait: "fas" },
+                { text: "Nijeryalı", trait: "nijerya" },
+                { text: "Kamerunlu", trait: "kamerun" },
+                { text: "Fildişi Sahilli", trait: "fildisi" },
+                { text: "Hırvat", trait: "hirvatistan" },
+                { text: "Japon", trait: "japonya" },
+                { text: "190cm'den Uzun Boylu", trait: "boy_uzun_190" },
+                { text: "190cm'den Kısa Boylu", trait: "boy_kisa_190" },
+                { text: "23 Yaş ve Altı", trait: "yas_23_alt" },
+                { text: "35 Yaş ve Üstü", trait: "yas_35_ust" },
+                { text: "Max Piyasa Değeri 75M+", trait: "pd_75_ust" },
+                { text: "Max Piyasa Değeri 75M Altında", trait: "pd_75_alt" },
+                { text: "Milli Takımda Hiç Oynamamış", trait: "milli_yok" },
+                { text: "Milli Takımla 100+ Maç", trait: "milli_100" }
+            ],
+            CB: [
+                { text: "7'den Fazla Kırmızı Kart", trait: "cb_7_kirmizi" }
+            ],
+            ST: [
+                { text: "Kariyerinde 400+ Gol", trait: "gol_400" }
             ]
         };
 
@@ -518,11 +614,23 @@
 
             let slotIndex = 0;
             todayGrid = {};
+            const usedTraits = new Set();
 
             dailyFormationLayout.forEach(rowArr => {
                 rowArr.forEach(pos => {
-                    let pool = kriterler.GENEL; 
-                    const selectedCriterion = pool[Math.floor(rnd() * pool.length)];
+                    let pool = [...kriterler.GENEL];
+                    
+                    if (pos === 'CB' && kriterler.CB) pool = pool.concat(kriterler.CB);
+                    if (pos === 'ST' && kriterler.ST) pool = pool.concat(kriterler.ST);
+
+                    let shuffled = pool.sort(() => 0.5 - rnd());
+                    let selectedCriterion = shuffled.find(c => !usedTraits.has(c.trait));
+                    
+                    if (!selectedCriterion) {
+                        selectedCriterion = { text: "Herhangi Biri", trait: "herkes" };
+                    } else {
+                        usedTraits.add(selectedCriterion.trait);
+                    }
                     
                     todayGrid[`slot-${slotIndex}`] = {
                         pos: pos,
