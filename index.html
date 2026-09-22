@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
-            font-family: 'VT323', monospace; /* Genel piksel font */
+            font-family: 'VT323', monospace; 
             margin: 0;
             padding: 0;
             background: radial-gradient(circle at center, #0a1f12 0%, #020604 100%);
@@ -18,7 +18,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-size: 22px; /* Piksel font biraz küçük durur, büyüttük */
+            font-size: 22px; 
         }
 
         #flash-effect {
@@ -157,7 +157,7 @@
             background-position: center top;
             font-size: 28px;
             color: rgba(255,255,255,0.3);
-            font-family: 'Poppins', sans-serif; /* Artı işareti temiz dursun */
+            font-family: 'Poppins', sans-serif; 
         }
 
         .slot.filled {
@@ -184,7 +184,7 @@
         }
 
         .player-name {
-            font-family: 'Poppins', sans-serif; /* İsimler Poppins (Piksel değil) */
+            font-family: 'Poppins', sans-serif; 
             font-size: 10px;
             font-weight: 800;
             margin-top: 4px;
@@ -273,7 +273,7 @@
             padding: 10px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-family: 'Poppins', sans-serif; /* Arama sonuçları da Poppins */
+            font-family: 'Poppins', sans-serif; 
             font-weight: 600;
             font-size: 13px;
         }
@@ -423,7 +423,7 @@
                     const aGoalsIdx = aHeaders.indexOf('goals');
                     const aRedIdx = aHeaders.indexOf('red_cards');
                     const aClubIdx = aHeaders.indexOf('player_club_id');
-                    const aCompIdx = aHeaders.indexOf('competition_id'); // Lig kodu eklendi
+                    const aCompIdx = aHeaders.indexOf('competition_id'); 
 
                     for (let i = 1; i < appLines.length; i++) {
                         if(!appLines[i] || appLines[i].trim() === "") continue;
@@ -437,7 +437,10 @@
                         if (aGoalsIdx > -1 && cols[aGoalsIdx]) statsMap[pid].goals += parseInt(cols[aGoalsIdx]) || 0;
                         if (aRedIdx > -1 && cols[aRedIdx]) statsMap[pid].redCards += parseInt(cols[aRedIdx]) || 0;
                         if (aClubIdx > -1 && cols[aClubIdx]) statsMap[pid].clubs.add(cols[aClubIdx]);
-                        if (aCompIdx > -1 && cols[aCompIdx]) statsMap[pid].comps.add(cols[aCompIdx]);
+                        if (aCompIdx > -1 && cols[aCompIdx]) {
+                            let cid = cols[aCompIdx].trim().replace(/['"]/g, '').toUpperCase();
+                            statsMap[pid].comps.add(cid);
+                        }
                     }
                 }
 
@@ -455,6 +458,10 @@
                 const heightIdx = headers.indexOf('height_in_cm');
                 const maxValIdx = headers.indexOf('highest_market_value_in_eur');
                 const dobIdx = headers.indexOf('date_of_birth');
+                
+                // Ana dosyadan lig yedeği (Garantilemek için)
+                let compIdIdx = headers.indexOf('current_club_domestic_competition_id');
+                if (compIdIdx === -1) compIdIdx = headers.indexOf('competition_id');
 
                 const loadedPlayers = [];
                 const currentYear = new Date().getFullYear();
@@ -469,7 +476,6 @@
 
                     const pid = cols[idIdx];
                     const pNat = (cols[nationIdx] || '').toLowerCase();
-                    const pPos = ((cols[posIdx] || '') + " " + (cols[subPosIdx] || '')).toUpperCase();
                     
                     let pImg = 'https://cdn.sofifa.net/players/notfound_0_120.png';
                     if (imgIdx > -1 && cols[imgIdx] && cols[imgIdx].length > 5) {
@@ -481,14 +487,16 @@
                         pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
                     }
 
-                    let pos = "CM";
-                    if(pPos.includes("GOALKEEPER")) pos = "GK";
-                    else if(pPos.includes("CENTRE-BACK")) pos = "CB";
-                    else if(pPos.includes("LEFT-BACK")) pos = "LB";
-                    else if(pPos.includes("RIGHT-BACK")) pos = "RB";
-                    else if(pPos.includes("MIDFIELD") || pPos.includes("CENTRAL")) pos = "CM";
-                    else if(pPos.includes("WINGER") || pPos.includes("LEFT") || pPos.includes("RIGHT")) pos = "RM";
-                    else if(pPos.includes("FORWARD") || pPos.includes("ATTACK") || pPos.includes("STRIKER")) pos = "ST";
+                    // Dinamik Lig ve Takım Analizi - SAĞLAMLAŞTIRILDI
+                    let currentComp = "";
+                    if (compIdIdx > -1 && cols[compIdIdx]) {
+                        currentComp = cols[compIdIdx].trim().replace(/['"]/g, '').toUpperCase();
+                    }
+
+                    const pStats = statsMap[pid] || { goals: 0, redCards: 0, clubs: new Set(), comps: new Set() };
+                    
+                    let allComps = new Set(pStats.comps);
+                    if (currentComp) allComps.add(currentComp);
 
                     const traits = ["herkes"];
                     
@@ -522,7 +530,7 @@
                         const val = parseInt(cols[maxValIdx]);
                         if (val >= 75000000) traits.push("pd_75_ust");
                         if (val < 75000000) traits.push("pd_75_alt");
-                        if (val <= 35000000) traits.push("pd_35_alt"); // Yeni Kriter
+                        if (val <= 35000000) traits.push("pd_35_alt"); 
                     }
                     if (dobIdx > -1 && cols[dobIdx] && cols[dobIdx].length >= 4) {
                         const age = currentYear - parseInt(cols[dobIdx].substring(0, 4));
@@ -530,25 +538,23 @@
                         if (age >= 35) traits.push("yas_35_ust");
                     }
 
-                    // Dinamik Lig ve Takım Analizi
-                    const pStats = statsMap[pid] || { goals: 0, redCards: 0, clubs: new Set(), comps: new Set() };
-                    
                     if (pStats.goals >= 400) traits.push("gol_400");
                     if (pStats.redCards >= 7) traits.push("cb_7_kirmizi");
                     if (pStats.clubs.size >= 8) traits.push("8_takim");
 
-                    // 5 Büyük Lig ve Süper Lig Mantığı
-                    let top5Count = 0;
-                    if (pStats.comps.has("GB1")) { traits.push("pl_oynamis"); top5Count++; } // Premier Lig
-                    if (pStats.comps.has("ES1")) { traits.push("laliga_oynamis"); top5Count++; } // La Liga
-                    if (pStats.comps.has("IT1")) { traits.push("seriea_oynamis"); top5Count++; } // Serie A
-                    if (pStats.comps.has("L1")) { traits.push("bundesliga_oynamis"); top5Count++; } // Bundesliga
-                    if (pStats.comps.has("FR1")) { traits.push("ligue1_oynamis"); top5Count++; } // Ligue 1
-                    
-                    if (top5Count >= 3) traits.push("top5_3_lig"); // 3 Tanesinde Oynamış
-                    if (pStats.comps.has("TR1")) traits.push("super_lig"); // Süper Lig'de Oynamış
+                    // 5 Büyük Lig ve Süper Lig Garantili Atama
+                    if (allComps.has("TR1") || allComps.has("TR2")) traits.push("super_lig");
 
-                    loadedPlayers.push({ name: pName, pos: pos, img: pImg, traits: traits });
+                    let top5Count = 0;
+                    if (allComps.has("GB1")) top5Count++; // Premier Lig
+                    if (allComps.has("ES1")) top5Count++; // La Liga
+                    if (allComps.has("IT1")) top5Count++; // Serie A
+                    if (allComps.has("L1"))  top5Count++; // Bundesliga
+                    if (allComps.has("FR1")) top5Count++; // Ligue 1
+                    
+                    if (top5Count >= 3) traits.push("top5_3_lig"); 
+
+                    loadedPlayers.push({ name: pName, img: pImg, traits: traits });
                 }
 
                 dbPlayers = loadedPlayers;
@@ -568,11 +574,12 @@
             }
         }
 
+        // DİZİLİŞLER DÜZELTİLDİ (Sol taraflar LM yapıldı)
         const dizilisler = {
-            "442": [["ST", "ST"], ["RM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "433": [["RM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "4231": [["ST"], ["RM", "CM", "RM"], ["CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "352": [["ST", "ST"], ["RM", "CM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]]
+            "442": [["ST", "ST"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "433": [["LM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "4231": [["ST"], ["LM", "CM", "RM"], ["CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "352": [["ST", "ST"], ["LM", "CM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]]
         };
 
         const kriterler = {
@@ -599,9 +606,9 @@
                 { text: "35 Yaş ve Üstü", trait: "yas_35_ust" },
                 { text: "Max Piyasa Değeri 75M+", trait: "pd_75_ust" },
                 { text: "Max Piyasa Değeri 75M Altında", trait: "pd_75_alt" },
-                { text: "Max Piyasa Değeri 35M", trait: "pd_35_alt" }, // Yeni Eklendi
-                { text: "5 Büyük Ligin 3'ünde Oynamış", trait: "top5_3_lig" }, // Yeni Eklendi
-                { text: "Süper Lig'de Oynamış", trait: "super_lig" }, // Yeni Eklendi
+                { text: "Max Piyasa Değeri 35M", trait: "pd_35_alt" }, 
+                { text: "5 Büyük Ligin 3'ünde Oynamış", trait: "top5_3_lig" }, 
+                { text: "Süper Lig'de Oynamış", trait: "super_lig" }, 
                 { text: "Kariyerinde 8+ Takımda Oynamış", trait: "8_takim" }
             ],
             CB: [
@@ -738,7 +745,7 @@
             filtered.slice(0, 15).forEach(player => {
                 const div = document.createElement("div");
                 div.className = "player-item";
-                div.innerHTML = `<img src="${player.img}" onerror="this.onerror=null; this.src='https://cdn.sofifa.net/players/notfound_0_120.png'"> ${player.name} (${player.pos})`;
+                div.innerHTML = `<img src="${player.img}" onerror="this.onerror=null; this.src='https://cdn.sofifa.net/players/notfound_0_120.png'"> ${player.name}`;
                 div.onclick = () => attemptPlacePlayer(player);
                 resultsBox.appendChild(div);
             });
