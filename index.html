@@ -6,6 +6,8 @@
     <title>Günün Gridi - Efsaneler Modu</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&family=VT323&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Milyonluk CSV'leri tarayıcıyı dondurmadan okumak için PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         body {
             font-family: 'VT323', monospace; 
@@ -93,6 +95,7 @@
             color: #f1c40f;
             margin-top: 15px;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             gap: 10px;
@@ -349,7 +352,13 @@
         <h1>GÜNÜN GRİDİ</h1>
         <input type="text" id="nickname-input" placeholder="Nickini gir..." autocomplete="off">
         <button class="play-btn" id="start-btn" onclick="startGame()" disabled>OYNA</button>
-        <div id="db-status">YÜKLENİYOR <div class="spinner"></div></div>
+        <div id="db-status">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span id="loading-msg">Veriler Yükleniyor...</span>
+                <div class="spinner" id="loading-spinner"></div>
+            </div>
+            <div id="error-msg" style="color: #e74c3c; font-size: 14px; margin-top:10px; display:none;"></div>
+        </div>
     </div>
 
     <div id="game-container">
@@ -397,198 +406,149 @@
         let todayGrid = {};
         let dbPlayers = []; 
 
-        const parseRow = (str) => {
-            let arr = [], quote = false, val = '';
-            for (let i = 0; i < str.length; i++) {
-                let cc = str[i];
-                if (cc === '"') quote = !quote;
-                else if (cc === ',' && !quote) { arr.push(val.trim()); val = ''; }
-                else val += cc;
+        // RASTGELE GÜNLÜK DİZİLİŞ TOHUMU
+        function mulberry32(a) {
+            return function() {
+              var t = a += 0x6D2B79F5;
+              t = Math.imul(t ^ t >>> 15, t | 1);
+              t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+              return ((t ^ t >>> 14) >>> 0) / 4294967296;
             }
-            arr.push(val.trim());
-            return arr;
-        };
+        }
 
-        // SALIMT ALTYAPISINA UYGUN DİNAMİK BAŞLIK BULUCU
-        const getColumnIndex = (headers, possibleNames) => {
-            for (let name of possibleNames) {
-                const idx = headers.findIndex(h => h === name || h.includes(name));
-                if (idx !== -1) return idx;
-            }
-            return -1;
-        };
+        // CSV DOSYALARINI DONMADAN OKUMAK İÇİN PAPAPARSE
+        function parseCSV(fileName) {
+            return new Promise((resolve, reject) => {
+                Papa.parse('./' + fileName + '?v=' + new Date().getTime(), {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    worker: true,
+                    complete: function(results) {
+                        resolve(results.data);
+                    },
+                    error: function(err) {
+                        reject(err);
+                    }
+                });
+            });
+        }
 
         async function loadLargeDatabase() {
-            const statusEl = document.getElementById("db-status");
+            const msgEl = document.getElementById("loading-msg");
+            const spinner = document.getElementById("loading-spinner");
+            const errEl = document.getElementById("error-msg");
             const startBtn = document.getElementById("start-btn");
 
             try {
-                const [playersRes, appsRes, transRes] = await Promise.all([
-                    fetch('./players.csv?v=' + new Date().getTime()),
-                    fetch('./appearances.csv?v=' + new Date().getTime()).catch(() => null),
-                    fetch('./transfers.csv?v=' + new Date().getTime()).catch(() => null)
-                ]);
-                
-                if(!playersRes.ok) throw new Error("players.csv yok!");
-
+                // 1. MAÇ GEÇMİŞİ OKUMA
+                msgEl.innerText = "İstatistikler Yükleniyor... (1/3)";
+                const appsData = await parseCSV('appearances.csv');
                 let statsMap = {};
-                
-                // TRANSFER VE MAÇ GEÇMİŞİ (SalimT formatına uyumlu)
-                if (transRes && transRes.ok) {
-                    const transText = await transRes.text();
-                    const tLines = transText.split('\n');
-                    const tHeaders = parseRow(tLines[0].toLowerCase());
-                    
-                    const tPidIdx = getColumnIndex(tHeaders, ['player_id', 'id', 'player']);
-                    const fromClubIdx = getColumnIndex(tHeaders, ['from_club_id', 'from_club', 'left']);
-                    const toClubIdx = getColumnIndex(tHeaders, ['to_club_id', 'to_club', 'joined']);
-
-                    for (let i = 1; i < tLines.length; i++) {
-                        if(!tLines[i] || tLines[i].trim() === "") continue;
-                        const cols = parseRow(tLines[i]);
-                        if (!cols[tPidIdx]) continue;
-                        
-                        const pid = cols[tPidIdx].replace(/[^0-9]/g, '');
-                        if (!pid) continue;
-
-                        if (!statsMap[pid]) {
-                            statsMap[pid] = { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), compClubs: {}, clubApps: {} };
-                        }
-                        
-                        if (fromClubIdx > -1 && cols[fromClubIdx]) statsMap[pid].clubs.add(cols[fromClubIdx].replace(/[^0-9]/g, ''));
-                        if (toClubIdx > -1 && cols[toClubIdx]) statsMap[pid].clubs.add(cols[toClubIdx].replace(/[^0-9]/g, ''));
-                    }
-                }
-                
-                if (appsRes && appsRes.ok) {
-                    const appsText = await appsRes.text();
-                    const appLines = appsText.split('\n');
-                    const aHeaders = parseRow(appLines[0].toLowerCase());
-                    
-                    const pIdIdx = getColumnIndex(aHeaders, ['player_id', 'player']);
-                    const aGoalsIdx = getColumnIndex(aHeaders, ['goals', 'goal']);
-                    const aRedIdx = getColumnIndex(aHeaders, ['red_cards', 'red']);
-                    const aClubIdx = getColumnIndex(aHeaders, ['player_club_id', 'club_id', 'team_id']);
-                    const aCompIdx = getColumnIndex(aHeaders, ['competition_id', 'league_id', 'competition']); 
-
-                    for (let i = 1; i < appLines.length; i++) {
-                        if(!appLines[i] || appLines[i].trim() === "") continue;
-                        const cols = parseRow(appLines[i]);
-                        if (!cols[pIdIdx]) continue;
-                        
-                        const pid = cols[pIdIdx].replace(/[^0-9]/g, '');
-                        if (!pid) continue;
-
-                        if (!statsMap[pid]) {
-                            statsMap[pid] = { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), compClubs: {}, clubApps: {} };
-                        }
-                        
-                        statsMap[pid].appsCount++;
-                        if (aGoalsIdx > -1 && cols[aGoalsIdx]) statsMap[pid].goals += parseInt(cols[aGoalsIdx]) || 0;
-                        if (aRedIdx > -1 && cols[aRedIdx]) statsMap[pid].redCards += parseInt(cols[aRedIdx]) || 0;
-                        
-                        if (aClubIdx > -1 && cols[aClubIdx]) {
-                            let cid = cols[aClubIdx].replace(/[^0-9]/g, '');
-                            if(cid) {
-                                statsMap[pid].clubs.add(cid);
-                                if (!statsMap[pid].clubApps[cid]) statsMap[pid].clubApps[cid] = 0;
-                                statsMap[pid].clubApps[cid]++;
-                            }
-                        }
-                        
-                        if (aCompIdx > -1 && cols[aCompIdx]) {
-                            let l_id = cols[aCompIdx].trim().replace(/['"]/g, '').toUpperCase();
-                            if(l_id) {
-                                statsMap[pid].comps.add(l_id);
-                                let cid = (aClubIdx > -1 && cols[aClubIdx]) ? cols[aClubIdx].replace(/[^0-9]/g, '') : null;
-                                if (cid) {
-                                    if (!statsMap[pid].compClubs[l_id]) statsMap[pid].compClubs[l_id] = new Set();
-                                    statsMap[pid].compClubs[l_id].add(cid);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // OYUNCU ANA VERİTABANI (Dinamik Başlıklarla)
-                const dataText = await playersRes.text();
-                const lines = dataText.split('\n');
-                const headers = parseRow(lines[0].toLowerCase());
-                
-                const nameIdx = getColumnIndex(headers, ['name', 'player_name']);
-                const nationIdx = getColumnIndex(headers, ['country_of_citizenship', 'nationality', 'country']);
-                const imgIdx = getColumnIndex(headers, ['image_url', 'photo', 'url']);
-                const idIdx = getColumnIndex(headers, ['player_id', 'id']);
-                const currentClubIdx = getColumnIndex(headers, ['current_club_id', 'club_id', 'team_id']);
-                const heightIdx = getColumnIndex(headers, ['height_in_cm', 'height']);
-                const dobIdx = getColumnIndex(headers, ['date_of_birth', 'dob', 'birth_date']);
-                const footIdx = getColumnIndex(headers, ['foot', 'preferred_foot']);
-
-                const loadedPlayers = [];
-                
-                for(let i = 1; i < lines.length; i++) {
-                    const line = lines[i];
-                    if(!line || line.trim() === "") continue;
-                    
-                    const cols = parseRow(line);
-                    const pName = cols[nameIdx] || '';
-                    if(pName.length < 2) continue;
-
-                    let pid = cols[idIdx] ? cols[idIdx].replace(/[^0-9]/g, '') : null;
+                for (let i = 0; i < appsData.length; i++) {
+                    let row = appsData[i];
+                    let pid = row.player_id;
                     if (!pid) continue;
-
-                    const pNat = (cols[nationIdx] || '').toLowerCase();
-                    const pFoot = footIdx > -1 ? (cols[footIdx] || '').toLowerCase() : '';
                     
-                    let pImg = 'https://cdn.sofifa.net/players/notfound_0_120.png';
-                    if (imgIdx > -1 && cols[imgIdx] && cols[imgIdx].length > 5) pImg = cols[imgIdx];
-                    else pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
-                    if (pImg.includes('transfermarkt')) pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
+                    if (!statsMap[pid]) {
+                        statsMap[pid] = { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
+                    }
+                    
+                    statsMap[pid].appsCount++;
+                    statsMap[pid].goals += parseInt(row.goals || 0);
+                    statsMap[pid].redCards += parseInt(row.red_cards || 0);
+                    
+                    let cid = row.player_club_id;
+                    if (cid) {
+                        statsMap[pid].clubs.add(cid);
+                        if (!statsMap[pid].clubApps[cid]) statsMap[pid].clubApps[cid] = 0;
+                        statsMap[pid].clubApps[cid]++;
+                    }
+                    
+                    let compId = row.competition_id;
+                    if (compId) {
+                        statsMap[pid].comps.add(compId.toUpperCase());
+                    }
+                }
 
+                // 2. TRANSFER GEÇMİŞİ OKUMA
+                msgEl.innerText = "Kariyer Geçmişi Yükleniyor... (2/3)";
+                const transData = await parseCSV('transfers.csv');
+                let transMap = new Map();
+                for (let i = 0; i < transData.length; i++) {
+                    let row = transData[i];
+                    let pid = row.player_id;
+                    if (!pid) continue;
+                    
+                    if (!transMap.has(pid)) transMap.set(pid, new Set());
+                    if (row.from_club_id) transMap.get(pid).add(row.from_club_id);
+                    if (row.to_club_id) transMap.get(pid).add(row.to_club_id);
+                }
+
+                // 3. OYUNCU ANA BİLGİLERİ VE KOMBİNASYON HARMANLAMA
+                msgEl.innerText = "Kadro Harmanlanıyor... (3/3)";
+                const playersData = await parseCSV('players.csv');
+                
+                const loadedPlayers = [];
+
+                for(let i = 0; i < playersData.length; i++) {
+                    let row = playersData[i];
+                    let pName = row.name || row.player_name || "";
+                    if (pName.length < 2) continue;
+
+                    let pid = row.player_id;
+                    let pNat = (row.country_of_citizenship || "").toLowerCase();
+                    let pFoot = (row.foot || "").toLowerCase();
+                    let height = parseInt(row.height_in_cm || 0);
+                    
+                    let birthYear = row.date_of_birth && row.date_of_birth.length >= 4 ? parseInt(row.date_of_birth.substring(0, 4)) : 0;
+                    
+                    let pImg = row.image_url;
+                    if (!pImg || pImg.length < 5) pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
+
+                    let pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
+                    let teamsCount = transMap.has(pid) ? transMap.get(pid).size : pStats.clubs.size;
+
+                    // --- KRİTER ETİKETLEME (TRAITS) ---
                     const traits = ["herkes"];
-                    const pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), compClubs: {}, clubApps: {} };
                     
-                    if (currentClubIdx > -1 && cols[currentClubIdx]) {
-                        let ccid = cols[currentClubIdx].replace(/[^0-9]/g, '');
-                        if (ccid) pStats.clubs.add(ccid);
-                    }
-
-                    if(pNat.includes("turkey") || pNat.includes("türkiye")) traits.push("turkiye");
-                    if(pNat.includes("brazil")) traits.push("brezilya");
-                    if(pNat.includes("argentina")) traits.push("arjantin");
-                    if(pNat.includes("germany")) traits.push("almanya");
-                    if(pNat.includes("england")) traits.push("ingiltere");
-                    if(pNat.includes("spain")) traits.push("ispanya");
-                    if(pNat.includes("france")) traits.push("fransa");
-                    if(pNat.includes("italy")) traits.push("italya");
-                    if(pNat.includes("netherlands") || pNat.includes("holland")) traits.push("hollanda");
-                    if(pNat.includes("uruguay")) traits.push("uruguay");
-                    if(pNat.includes("nigeria")) traits.push("nijerya");
-
-                    if (heightIdx > -1 && cols[heightIdx]) {
-                        const h = parseInt(cols[heightIdx].replace(/[^0-9]/g, ''));
-                        if (h <= 175) traits.push("boy_175_alt");
-                    }
-                    if (dobIdx > -1 && cols[dobIdx] && cols[dobIdx].length >= 4) {
-                        const year = parseInt(cols[dobIdx].substring(0, 4));
-                        if (year >= 1990 && year <= 1999) traits.push("dogum_90lar");
-                        if (year >= 2000) traits.push("dogum_2000ler");
-                    }
+                    // Fiziksel
                     if (pFoot === 'left') traits.push("sol_ayak");
+                    if (height > 0 && height <= 175) traits.push("boy_175_alt");
+                    if (birthYear >= 1990 && birthYear <= 1999) traits.push("dogum_90lar");
+                    if (birthYear >= 2000) traits.push("dogum_2000ler");
 
-                    const c = pStats.clubs;
+                    // Ülke
+                    if (pNat.includes('brazil')) traits.push("brezilya");
+                    if (pNat.includes('argentina')) traits.push("arjantin");
+                    if (pNat.includes('turkey') || pNat.includes('türkiye')) traits.push("turkiye");
+                    if (pNat.includes('germany')) traits.push("almanya");
+                    if (pNat.includes('england')) traits.push("ingiltere");
+                    if (pNat.includes('spain')) traits.push("ispanya");
+                    if (pNat.includes('france')) traits.push("fransa");
+                    if (pNat.includes('italy')) traits.push("italya");
+                    if (pNat.includes('netherlands') || pNat.includes('holland')) traits.push("hollanda");
+
+                    // Kariyer
+                    let compsSet = pStats.comps;
+                    let c = pStats.clubs;
                     
-                    let majorClubsCount = Array.from(c).filter(cid => (pStats.clubApps[cid] || 0) > 15).length;
-                    if ((majorClubsCount === 1 && pStats.appsCount >= 100) || (c.size <= 2 && pStats.appsCount >= 150)) {
-                        traits.push("tek_takim_kariyer");
-                    }
+                    let ulkeSayisi = Array.from(compsSet).filter(co => co.endsWith('1')).length;
+                    if (ulkeSayisi >= 4) traits.push("ulke_4_farkli");
+                    if (teamsCount >= 7) traits.push("takim_7_fazla");
+                    if (Object.values(pStats.clubApps).some(v => v >= 200)) traits.push("tek_takim_200_mac");
+                    if (teamsCount === 1 || (teamsCount === 0 && pStats.appsCount > 0)) traits.push("tek_takim_kariyer");
+                    if (pStats.appsCount >= 300) traits.push("mac_300");
+                    if (pStats.redCards === 0 && pStats.appsCount > 50) traits.push("sifir_kirmizi");
+                    
+                    if (pStats.goals >= 20) traits.push("gol_20_defans");
 
+                    // Kulüp ve Ligler
                     if (c.has('418') && c.has('131')) traits.push("real_barca");
                     if (c.has('418') && c.has('13')) traits.push("real_atletico");
                     if (c.has('131') && c.has('13')) traits.push("barca_atletico");
                     if (c.has('46') && c.has('5')) traits.push("inter_milan");
                     if (c.has('27') && c.has('16')) traits.push("bayern_dortmund");
-                    
                     if (c.has('141') && c.has('36')) traits.push("gs_fb");
                     if (c.has('141') && c.has('114')) traits.push("gs_bjk");
                     if (c.has('141') && c.has('449')) traits.push("gs_ts");
@@ -597,62 +557,52 @@
                     if (c.has('114') && c.has('449')) traits.push("bjk_ts");
 
                     let top5 = 0;
-                    if (pStats.comps.has("GB1") || Array.from(c).some(cid => ['11', '31', '985', '281', '379', '148'].includes(cid))) top5++;
-                    if (pStats.comps.has("ES1") || Array.from(c).some(cid => ['418', '131', '13', '150', '1050', '368'].includes(cid))) top5++;
-                    if (pStats.comps.has("IT1") || Array.from(c).some(cid => ['46', '5', '506', '416', '380', '12'].includes(cid))) top5++;
-                    if (pStats.comps.has("L1") || Array.from(c).some(cid => ['27', '16', '15', '82', '79', '3'].includes(cid))) top5++;
-                    if (pStats.comps.has("FR1") || Array.from(c).some(cid => ['583', '1041', '162', '855', '244', '1082'].includes(cid))) top5++;
-                    
+                    if (compsSet.has("GB1") || Array.from(c).some(cid => ['11', '31', '985', '281', '379', '148'].includes(cid))) top5++;
+                    if (compsSet.has("ES1") || Array.from(c).some(cid => ['418', '131', '13', '150', '1050', '368'].includes(cid))) top5++;
+                    if (compsSet.has("IT1") || Array.from(c).some(cid => ['46', '5', '506', '416', '380', '12'].includes(cid))) top5++;
+                    if (compsSet.has("L1")  || Array.from(c).some(cid => ['27', '16', '15', '82', '79', '3'].includes(cid))) top5++;
+                    if (compsSet.has("FR1") || Array.from(c).some(cid => ['583', '1041', '162', '855', '244', '1082'].includes(cid))) top5++;
+
                     if (top5 >= 3) traits.push("top5_3_lig");
                     if (top5 === 0 && pStats.appsCount > 10) traits.push("bes_buyuk_yok");
 
-                    if (pStats.compClubs['IT1'] && pStats.compClubs['IT1'].size >= 3) traits.push("seriea_3_takim");
-                    if (pStats.compClubs['TR1'] && pStats.compClubs['TR1'].size >= 3) traits.push("superlig_3_takim");
-
-                    let ulkeSayisi = Array.from(pStats.comps).filter(x => x.endsWith('1')).length;
-                    if (ulkeSayisi >= 4) traits.push("ulke_4_farkli");
-
-                    if (c.size >= 7) traits.push("takim_7_fazla");
-                    if (pStats.appsCount >= 300) traits.push("mac_300");
-                    if (pStats.redCards === 0 && pStats.appsCount >= 50) traits.push("sifir_kirmizi");
-
-                    const isSuperLig = pStats.comps.has('TR1') || Array.from(c).some(cid => ['141','36','114','449','3209','2381','152','77','3216','236','10484'].includes(cid));
+                    const isSuperLig = compsSet.has('TR1') || Array.from(c).some(cid => ['141','36','114','449','3209','2381','152','77','3216','236','10484'].includes(cid));
 
                     if (isSuperLig) {
+                        if (!c.has('141') && !c.has('36') && !c.has('114') && !c.has('449')) traits.push("dort_buyuk_yok");
                         if (pNat.includes('brazil')) traits.push("tr_brezilyali");
                         if (pNat.includes('germany')) traits.push("tr_alman");
                         if (pNat.includes('italy')) traits.push("tr_italyan");
                         if (pNat.includes('nigeria')) traits.push("tr_nijeryali");
                         if (pNat.includes('uruguay')) traits.push("tr_uruguayli");
-                        
-                        if (!c.has('141') && !c.has('36') && !c.has('114') && !c.has('449')) {
-                            traits.push("dort_buyuk_yok");
-                        }
                     }
 
                     if (c.has('31') && pNat.includes('italy')) traits.push("liv_italyan");
                     if (c.has('46') && pNat.includes('germany')) traits.push("inter_alman");
                     if (c.has('131') && pNat.includes('france')) traits.push("barca_fransiz");
 
-                    if (pStats.goals >= 20) traits.push("gol_20_defans");
-                    if (Object.values(pStats.clubApps).some(v => v >= 200)) traits.push("tek_takim_200_mac");
-
                     loadedPlayers.push({ name: pName, img: pImg, traits: traits });
                 }
 
                 dbPlayers = loadedPlayers;
                 
-                if(dbPlayers.length > 0) {
-                    statusEl.innerHTML = "✓ YÜKLENDİ!";
-                    statusEl.style.color = "#2ecc71";
-                    startBtn.disabled = false;
-                    startBtn.classList.add("active-btn");
-                }
+                msgEl.innerText = `✓ EFSANELER YÜKLENDİ (${dbPlayers.length} Topçu)`;
+                spinner.style.display = "none";
+                msgEl.parentElement.style.color = "#2ecc71";
+                startBtn.disabled = false;
+                startBtn.classList.add("active-btn");
+
             } catch (err) {
-                statusEl.innerHTML = "⚠ HATA!";
+                console.error(err);
+                spinner.style.display = "none";
+                msgEl.innerText = "⚠ HATA";
+                msgEl.parentElement.style.color = "#e74c3c";
+                errEl.style.display = "block";
+                errEl.innerHTML = `Dosyalar okunamadı!<br>GitHub'da 'players.csv', 'appearances.csv', 'transfers.csv' isimlerinin doğruluğundan emin ol.`;
             }
         }
 
+        // KATEGORİ VE DİZİLİŞ TANIMLAMALARI
         const dizilisler = {
             "442": [["ST", "ST"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
             "433": [["LM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
@@ -685,8 +635,6 @@
                 { text: "Fenerbahçe & Trabzonspor", trait: "fb_ts" },
                 { text: "Beşiktaş & Trabzonspor", trait: "bjk_ts" },
                 { text: "5 Büyük Ligin 3'ünde Oynamış", trait: "top5_3_lig" },
-                { text: "Serie A'da 3 Farklı Takım", trait: "seriea_3_takim" },
-                { text: "Süper Lig'de 3 Farklı Takım", trait: "superlig_3_takim" },
                 { text: "5 Büyük Ligde Hiç Oynamamış", trait: "bes_buyuk_yok" },
                 { text: "Süper Lig'de 4 Büyükte Oynamamış", trait: "dort_buyuk_yok" }
             ],
@@ -719,15 +667,6 @@
             ]
         };
 
-        function mulberry32(a) {
-            return function() {
-              var t = a += 0x6D2B79F5;
-              t = Math.imul(t ^ t >>> 15, t | 1);
-              t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-              return ((t ^ t >>> 14) >>> 0) / 4294967296;
-            }
-        }
-
         function generateDailyGrid() {
             const today = new Date();
             const dateString = today.getFullYear() + "" + today.getMonth() + "" + today.getDate();
@@ -754,6 +693,7 @@
                 rowArr.forEach(pos => {
                     let mevcutHavuz = [...tumHavuz];
                     
+                    // Defans oyuncularına özel kategoriyi dahil et
                     if (pos === 'CB' || pos === 'LB' || pos === 'RB') {
                         mevcutHavuz = mevcutHavuz.concat(kriterKategorileri.OZEL_DEFANS.map(c => ({...c, cat: 'DEF'})));
                     }
