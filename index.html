@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bil Bakalım Kim? / Günün Gridi</title>
+    <title>Günün Gridi - Efsane Mod</title>
     <!-- Hem Piksel font (VT323) hem de temiz okunabilmesi için Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&family=VT323&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -18,7 +18,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-size: 22px; 
+            font-size: 24px; 
         }
 
         #flash-effect {
@@ -49,7 +49,7 @@
         #login-screen h1 {
             margin-top: 0;
             color: #2ecc71;
-            font-size: 48px;
+            font-size: 52px;
             font-weight: normal;
             letter-spacing: 2px;
         }
@@ -78,7 +78,7 @@
             padding: 12px 20px;
             width: 100%;
             border-radius: 8px;
-            font-size: 28px;
+            font-size: 32px;
             cursor: not-allowed;
             transition: 0.3s;
             font-family: inherit;
@@ -111,14 +111,14 @@
             padding: 0 10px;
         }
 
-        .user-info { font-size: 28px; color: #2ecc71; text-transform: uppercase; }
+        .user-info { font-size: 32px; color: #2ecc71; text-transform: uppercase; }
         .score-box {
             background: rgba(0,0,0,0.5);
             padding: 6px 16px;
             border-radius: 8px;
             color: #f1c40f;
             border: 1px solid rgba(241, 196, 15, 0.3);
-            font-size: 24px;
+            font-size: 26px;
         }
 
         .pitch {
@@ -167,7 +167,7 @@
 
         .pos-badge {
             background: #000;
-            font-size: 16px;
+            font-size: 18px;
             padding: 2px 6px;
             border-radius: 4px;
             margin-top: -12px;
@@ -177,7 +177,7 @@
         }
 
         .criteria {
-            font-size: 14px;
+            font-size: 15px;
             margin-top: 6px;
             color: #bdc3c7;
             line-height: 1.1;
@@ -204,7 +204,7 @@
             color: #000;
             border: none;
             border-radius: 8px;
-            font-size: 28px;
+            font-size: 32px;
             cursor: pointer;
             transition: 0.3s;
             font-family: inherit;
@@ -238,7 +238,7 @@
             align-items: center;
             margin-bottom: 15px;
             color: #2ecc71;
-            font-size: 26px;
+            font-size: 30px;
         }
 
         input[type="text"] {
@@ -247,8 +247,9 @@
             border: 1px solid rgba(255,255,255,0.2);
             border-radius: 8px;
             margin-bottom: 15px;
-            font-size: 22px;
-            font-family: inherit;
+            font-size: 20px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
             box-sizing: border-box;
             outline: none;
             background: rgba(0,0,0,0.4);
@@ -315,7 +316,7 @@
             color: #000;
             font-family: inherit;
             cursor: pointer;
-            font-size: 24px;
+            font-size: 28px;
         }
 
         @keyframes shake {
@@ -335,7 +336,7 @@
         <h1>GÜNÜN GRİDİ</h1>
         <input type="text" id="nickname-input" placeholder="Nickini gir..." autocomplete="off">
         <button class="play-btn" id="start-btn" onclick="startGame()" disabled>OYNA</button>
-        <div id="db-status">İstatistikler Taranıyor... Bekle ⏳</div>
+        <div id="db-status">Efsane İstatistikler Taranıyor ⏳</div>
     </div>
 
     <div id="game-container">
@@ -399,22 +400,18 @@
             const statusEl = document.getElementById("db-status");
             const startBtn = document.getElementById("start-btn");
 
-            const yedekKadro = [
-                { name: "Test Oyuncu", pos: "ST", img: "https://cdn.sofifa.net/players/notfound_0_120.png", traits: ["herkes", "arjantin", "gol_400", "top5_3_lig", "super_lig"] }
-            ];
-
             try {
                 const [playersRes, appsRes] = await Promise.all([
                     fetch('./players.csv?v=' + new Date().getTime()),
                     fetch('./appearances.csv?v=' + new Date().getTime()).catch(() => null)
                 ]);
                 
-                if(!playersRes.ok) throw new Error("players.csv bulunamadı!");
+                if(!playersRes.ok) throw new Error("players.csv yok!");
 
                 let statsMap = {};
                 
                 if (appsRes && appsRes.ok) {
-                    statusEl.innerText = "Lig Geçmişleri Okunuyor... ⏳";
+                    statusEl.innerText = "Maç Kayıtları İşleniyor... ⏳";
                     const appsText = await appsRes.text();
                     const appLines = appsText.split('\n');
                     const aHeaders = parseRow(appLines[0].toLowerCase());
@@ -432,19 +429,32 @@
                         if (!pid) continue;
 
                         if (!statsMap[pid]) {
-                            statsMap[pid] = { goals: 0, redCards: 0, clubs: new Set(), comps: new Set() };
+                            statsMap[pid] = { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), compClubs: {}, clubApps: {} };
                         }
+                        
+                        statsMap[pid].appsCount++;
                         if (aGoalsIdx > -1 && cols[aGoalsIdx]) statsMap[pid].goals += parseInt(cols[aGoalsIdx]) || 0;
                         if (aRedIdx > -1 && cols[aRedIdx]) statsMap[pid].redCards += parseInt(cols[aRedIdx]) || 0;
-                        if (aClubIdx > -1 && cols[aClubIdx]) statsMap[pid].clubs.add(cols[aClubIdx]);
+                        
+                        if (aClubIdx > -1 && cols[aClubIdx]) {
+                            let cid = cols[aClubIdx];
+                            statsMap[pid].clubs.add(cid);
+                            if (!statsMap[pid].clubApps[cid]) statsMap[pid].clubApps[cid] = 0;
+                            statsMap[pid].clubApps[cid]++;
+                        }
+                        
                         if (aCompIdx > -1 && cols[aCompIdx]) {
-                            let cid = cols[aCompIdx].trim().replace(/['"]/g, '').toUpperCase();
-                            statsMap[pid].comps.add(cid);
+                            let l_id = cols[aCompIdx].trim().replace(/['"]/g, '').toUpperCase();
+                            statsMap[pid].comps.add(l_id);
+                            if (aClubIdx > -1 && cols[aClubIdx]) {
+                                if (!statsMap[pid].compClubs[l_id]) statsMap[pid].compClubs[l_id] = new Set();
+                                statsMap[pid].compClubs[l_id].add(cols[aClubIdx]);
+                            }
                         }
                     }
                 }
 
-                statusEl.innerText = "Saha Çizgileri Çekiliyor... ⏳";
+                statusEl.innerText = "Yetenekler Eşleştiriliyor... ⏳";
                 const dataText = await playersRes.text();
                 const lines = dataText.split('\n');
                 const headers = parseRow(lines[0].toLowerCase());
@@ -456,16 +466,11 @@
                 const imgIdx = headers.indexOf('image_url');
                 const idIdx = headers.indexOf('player_id');
                 const heightIdx = headers.indexOf('height_in_cm');
-                const maxValIdx = headers.indexOf('highest_market_value_in_eur');
                 const dobIdx = headers.indexOf('date_of_birth');
-                
-                // Ana dosyadan lig yedeği (Garantilemek için)
-                let compIdIdx = headers.indexOf('current_club_domestic_competition_id');
-                if (compIdIdx === -1) compIdIdx = headers.indexOf('competition_id');
+                const footIdx = headers.indexOf('foot');
 
                 const loadedPlayers = [];
-                const currentYear = new Date().getFullYear();
-
+                
                 for(let i = 1; i < lines.length; i++) {
                     const line = lines[i];
                     if(!line || line.trim() === "") continue;
@@ -476,30 +481,18 @@
 
                     const pid = cols[idIdx];
                     const pNat = (cols[nationIdx] || '').toLowerCase();
+                    const pPos = ((cols[posIdx] || '') + " " + (cols[subPosIdx] || '')).toUpperCase();
+                    const pFoot = footIdx > -1 ? (cols[footIdx] || '').toLowerCase() : '';
                     
                     let pImg = 'https://cdn.sofifa.net/players/notfound_0_120.png';
-                    if (imgIdx > -1 && cols[imgIdx] && cols[imgIdx].length > 5) {
-                        pImg = cols[imgIdx];
-                    } else if (pid) {
-                        pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
-                    }
-                    if (pImg.includes('transfermarkt')) {
-                        pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
-                    }
-
-                    // Dinamik Lig ve Takım Analizi - SAĞLAMLAŞTIRILDI
-                    let currentComp = "";
-                    if (compIdIdx > -1 && cols[compIdIdx]) {
-                        currentComp = cols[compIdIdx].trim().replace(/['"]/g, '').toUpperCase();
-                    }
-
-                    const pStats = statsMap[pid] || { goals: 0, redCards: 0, clubs: new Set(), comps: new Set() };
-                    
-                    let allComps = new Set(pStats.comps);
-                    if (currentComp) allComps.add(currentComp);
+                    if (imgIdx > -1 && cols[imgIdx] && cols[imgIdx].length > 5) pImg = cols[imgIdx];
+                    else if (pid) pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
+                    if (pImg.includes('transfermarkt')) pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
 
                     const traits = ["herkes"];
+                    const pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), compClubs: {}, clubApps: {} };
                     
+                    // --- MİLLİYET & KİŞİSEL ---
                     if(pNat.includes("turkey") || pNat.includes("türkiye")) traits.push("turkiye");
                     if(pNat.includes("brazil")) traits.push("brezilya");
                     if(pNat.includes("argentina")) traits.push("arjantin");
@@ -508,51 +501,83 @@
                     if(pNat.includes("spain")) traits.push("ispanya");
                     if(pNat.includes("france")) traits.push("fransa");
                     if(pNat.includes("italy")) traits.push("italya");
-                    if(pNat.includes("portugal")) traits.push("portekiz");
                     if(pNat.includes("netherlands") || pNat.includes("holland")) traits.push("hollanda");
-                    if(pNat.includes("belgium")) traits.push("belcika");
                     if(pNat.includes("uruguay")) traits.push("uruguay");
-                    if(pNat.includes("colombia")) traits.push("kolombiya");
-                    if(pNat.includes("senegal")) traits.push("senegal");
-                    if(pNat.includes("morocco")) traits.push("fas");
                     if(pNat.includes("nigeria")) traits.push("nijerya");
-                    if(pNat.includes("cameroon")) traits.push("kamerun");
-                    if(pNat.includes("ivory coast") || pNat.includes("cote d'ivoire")) traits.push("fildisi");
-                    if(pNat.includes("croatia")) traits.push("hirvatistan");
-                    if(pNat.includes("japan")) traits.push("japonya");
 
                     if (heightIdx > -1 && cols[heightIdx]) {
                         const h = parseInt(cols[heightIdx]);
-                        if (h > 190) traits.push("boy_uzun_190");
-                        if (h < 190) traits.push("boy_kisa_190");
-                    }
-                    if (maxValIdx > -1 && cols[maxValIdx]) {
-                        const val = parseInt(cols[maxValIdx]);
-                        if (val >= 75000000) traits.push("pd_75_ust");
-                        if (val < 75000000) traits.push("pd_75_alt");
-                        if (val <= 35000000) traits.push("pd_35_alt"); 
+                        if (h <= 175) traits.push("boy_175_alt");
                     }
                     if (dobIdx > -1 && cols[dobIdx] && cols[dobIdx].length >= 4) {
-                        const age = currentYear - parseInt(cols[dobIdx].substring(0, 4));
-                        if (age <= 23) traits.push("yas_23_alt");
-                        if (age >= 35) traits.push("yas_35_ust");
+                        const year = parseInt(cols[dobIdx].substring(0, 4));
+                        if (year >= 1990 && year <= 1999) traits.push("dogum_90lar");
+                        if (year >= 2000) traits.push("dogum_2000ler");
+                    }
+                    if (pFoot === 'left') traits.push("sol_ayak");
+
+                    // --- KULÜP EŞLEŞMELERİ (Derbiler ve Devler) ---
+                    const c = pStats.clubs;
+                    if (c.has('418') && c.has('131')) traits.push("real_barca");
+                    if (c.has('418') && c.has('13')) traits.push("real_atletico");
+                    if (c.has('131') && c.has('13')) traits.push("barca_atletico");
+                    if (c.has('46') && c.has('5')) traits.push("inter_milan");
+                    if (c.has('27') && c.has('16')) traits.push("bayern_dortmund");
+                    
+                    // 4 Büyükler Derbileri
+                    if (c.has('141') && c.has('36')) traits.push("gs_fb");
+                    if (c.has('141') && c.has('114')) traits.push("gs_bjk");
+                    if (c.has('141') && c.has('449')) traits.push("gs_ts");
+                    if (c.has('36') && c.has('114')) traits.push("fb_bjk");
+                    if (c.has('36') && c.has('449')) traits.push("fb_ts");
+                    if (c.has('114') && c.has('449')) traits.push("bjk_ts");
+
+                    // --- ÖZEL İSTATİSTİKLER ---
+                    let top5 = 0;
+                    if (pStats.comps.has("GB1")) top5++;
+                    if (pStats.comps.has("ES1")) top5++;
+                    if (pStats.comps.has("IT1")) top5++;
+                    if (pStats.comps.has("L1")) top5++;
+                    if (pStats.comps.has("FR1")) top5++;
+                    
+                    if (top5 >= 3) traits.push("top5_3_lig");
+                    if (top5 === 0 && pStats.appsCount > 10) traits.push("bes_buyuk_yok");
+
+                    if (pStats.compClubs['IT1'] && pStats.compClubs['IT1'].size >= 3) traits.push("seriea_3_takim");
+                    if (pStats.compClubs['TR1'] && pStats.compClubs['TR1'].size >= 3) traits.push("superlig_3_takim");
+
+                    let ulkeSayisi = Array.from(pStats.comps).filter(x => x.endsWith('1')).length;
+                    if (ulkeSayisi >= 4) traits.push("ulke_4_farkli");
+
+                    if (pStats.clubs.size >= 7) traits.push("takim_7_fazla");
+                    if (pStats.clubs.size === 1 && pStats.appsCount >= 50) traits.push("tek_takim_kariyer");
+                    
+                    if (pStats.appsCount >= 300) traits.push("mac_300");
+                    if (pStats.redCards === 0 && pStats.appsCount >= 50) traits.push("sifir_kirmizi");
+
+                    // Özel Melezler (Ülke + Lig)
+                    if (pStats.comps.has('TR1')) {
+                        if (pNat.includes('brazil')) traits.push("tr_brezilyali");
+                        if (pNat.includes('germany')) traits.push("tr_alman");
+                        if (pNat.includes('italy')) traits.push("tr_italyan");
+                        if (pNat.includes('nigeria')) traits.push("tr_nijeryali");
+                        if (pNat.includes('uruguay')) traits.push("tr_uruguayli");
+                        
+                        // 4 Büyüklerde oynamamış süper ligçi
+                        if (!c.has('141') && !c.has('36') && !c.has('114') && !c.has('449')) {
+                            traits.push("dort_buyuk_yok");
+                        }
                     }
 
-                    if (pStats.goals >= 400) traits.push("gol_400");
-                    if (pStats.redCards >= 7) traits.push("cb_7_kirmizi");
-                    if (pStats.clubs.size >= 8) traits.push("8_takim");
+                    if (c.has('31') && pNat.includes('italy')) traits.push("liv_italyan");
+                    if (c.has('46') && pNat.includes('germany')) traits.push("inter_alman");
+                    if (c.has('131') && pNat.includes('france')) traits.push("barca_fransiz");
 
-                    // 5 Büyük Lig ve Süper Lig Garantili Atama
-                    if (allComps.has("TR1") || allComps.has("TR2")) traits.push("super_lig");
+                    // Defans golcüleri (Sadece savunmalara açılacak)
+                    if (pStats.goals >= 20) traits.push("gol_20_defans");
 
-                    let top5Count = 0;
-                    if (allComps.has("GB1")) top5Count++; // Premier Lig
-                    if (allComps.has("ES1")) top5Count++; // La Liga
-                    if (allComps.has("IT1")) top5Count++; // Serie A
-                    if (allComps.has("L1"))  top5Count++; // Bundesliga
-                    if (allComps.has("FR1")) top5Count++; // Ligue 1
-                    
-                    if (top5Count >= 3) traits.push("top5_3_lig"); 
+                    // Tek takımda 200+ Maç
+                    if (Object.values(pStats.clubApps).some(v => v >= 200)) traits.push("tek_takim_200_mac");
 
                     loadedPlayers.push({ name: pName, img: pImg, traits: traits });
                 }
@@ -560,21 +585,16 @@
                 dbPlayers = loadedPlayers;
                 
                 if(dbPlayers.length > 0) {
-                    statusEl.innerText = `✓ ${dbPlayers.length} Topçu Yüklendi!`;
+                    statusEl.innerText = `✓ Efsane Mod Aktif! (${dbPlayers.length} Oyuncu)`;
                     statusEl.style.color = "#2ecc71";
                     startBtn.disabled = false;
                     startBtn.classList.add("active-btn");
                 }
             } catch (err) {
-                dbPlayers = yedekKadro;
-                statusEl.innerText = "⚠ CSV yok, test kadrosu yüklendi!";
-                statusEl.style.color = "#f39c12"; 
-                startBtn.disabled = false;
-                startBtn.classList.add("active-btn");
+                statusEl.innerText = "⚠ Veritabanı okunamadı!";
             }
         }
 
-        // DİZİLİŞLER DÜZELTİLDİ (Sol taraflar LM yapıldı)
         const dizilisler = {
             "442": [["ST", "ST"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
             "433": [["LM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
@@ -582,8 +602,9 @@
             "352": [["ST", "ST"], ["LM", "CM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]]
         };
 
-        const kriterler = {
-            GENEL: [
+        // KATEGORİLERE AYRILMIŞ KRİTERLER (KOTA SİSTEMİ İÇİN)
+        const kriterKategorileri = {
+            ULKE: [
                 { text: "Brezilyalı", trait: "brezilya" },
                 { text: "Arjantinli", trait: "arjantin" },
                 { text: "Türk", trait: "turkiye" },
@@ -592,30 +613,52 @@
                 { text: "İspanyol", trait: "ispanya" },
                 { text: "Fransız", trait: "fransa" },
                 { text: "İtalyan", trait: "italya" },
-                { text: "Portekizli", trait: "portekiz" },
-                { text: "Hollandalı", trait: "hollanda" },
-                { text: "Belçikalı", trait: "belcika" },
-                { text: "Uruguaylı", trait: "uruguay" },
-                { text: "Senegalli", trait: "senegal" },
-                { text: "Fildişi Sahilli", trait: "fildisi" },
-                { text: "Hırvat", trait: "hirvatistan" },
-                { text: "Japon", trait: "japonya" },
-                { text: "190cm'den Uzun Boylu", trait: "boy_uzun_190" },
-                { text: "190cm'den Kısa Boylu", trait: "boy_kisa_190" },
-                { text: "23 Yaş ve Altı", trait: "yas_23_alt" },
-                { text: "35 Yaş ve Üstü", trait: "yas_35_ust" },
-                { text: "Max Piyasa Değeri 75M+", trait: "pd_75_ust" },
-                { text: "Max Piyasa Değeri 75M Altında", trait: "pd_75_alt" },
-                { text: "Max Piyasa Değeri 35M", trait: "pd_35_alt" }, 
-                { text: "5 Büyük Ligin 3'ünde Oynamış", trait: "top5_3_lig" }, 
-                { text: "Süper Lig'de Oynamış", trait: "super_lig" }, 
-                { text: "Kariyerinde 8+ Takımda Oynamış", trait: "8_takim" }
+                { text: "Hollandalı", trait: "hollanda" }
             ],
-            CB: [
-                { text: "7'den Fazla Kırmızı Kart", trait: "cb_7_kirmizi" }
+            LIG_KULUP: [
+                { text: "Real Madrid & Barcelona", trait: "real_barca" },
+                { text: "Real Madrid & Atl. Madrid", trait: "real_atletico" },
+                { text: "Barcelona & Atl. Madrid", trait: "barca_atletico" },
+                { text: "İnter & Milan", trait: "inter_milan" },
+                { text: "Bayern & Dortmund", trait: "bayern_dortmund" },
+                { text: "Galatasaray & Fenerbahçe", trait: "gs_fb" },
+                { text: "Galatasaray & Beşiktaş", trait: "gs_bjk" },
+                { text: "Galatasaray & Trabzonspor", trait: "gs_ts" },
+                { text: "Fenerbahçe & Beşiktaş", trait: "fb_bjk" },
+                { text: "Fenerbahçe & Trabzonspor", trait: "fb_ts" },
+                { text: "Beşiktaş & Trabzonspor", trait: "bjk_ts" },
+                { text: "5 Büyük Ligin 3'ünde Oynamış", trait: "top5_3_lig" },
+                { text: "Serie A'da 3 Farklı Takım", trait: "seriea_3_takim" },
+                { text: "Süper Lig'de 3 Farklı Takım", trait: "superlig_3_takim" },
+                { text: "5 Büyük Ligde Hiç Oynamamış", trait: "bes_buyuk_yok" },
+                { text: "Süper Lig'de 4 Büyükte Oynamamış", trait: "dort_buyuk_yok" }
             ],
-            ST: [
-                { text: "Kariyerinde 400+ Gol", trait: "gol_400" }
+            FIZIKSEL: [
+                { text: "Sol Ayaklı", trait: "sol_ayak" },
+                { text: "1.75m ve Altı Boy", trait: "boy_175_alt" },
+                { text: "90'lar Doğumlu (90-99)", trait: "dogum_90lar" },
+                { text: "2000 ve Sonrası Doğumlu", trait: "dogum_2000ler" }
+            ],
+            KARIYER: [
+                { text: "En Az 4 Farklı Ülkede Oynamış", trait: "ulke_4_farkli" },
+                { text: "Kariyerinde 7+ Takımda Oynamış", trait: "takim_7_fazla" },
+                { text: "Tek Bir Takımda 200+ Maç", trait: "tek_takim_200_mac" },
+                { text: "Kariyeri Boyu Tek Takımda Oynamış", trait: "tek_takim_kariyer" },
+                { text: "Kariyerinde 300+ Resmi Maç", trait: "mac_300" },
+                { text: "Hiç Kırmızı Kart Görmemiş (50+ Maç)", trait: "sifir_kirmizi" }
+            ],
+            MELEZ: [
+                { text: "Süper Lig'de Oynamış Brezilyalı", trait: "tr_brezilyali" },
+                { text: "Süper Lig'de Oynamış Alman", trait: "tr_alman" },
+                { text: "Süper Lig'de Oynamış İtalyan", trait: "tr_italyan" },
+                { text: "Süper Lig'de Oynamış Nijeryalı", trait: "tr_nijeryali" },
+                { text: "Süper Lig'de Oynamış Uruguaylı", trait: "tr_uruguayli" },
+                { text: "Liverpool'da Oynamış İtalyan", trait: "liv_italyan" },
+                { text: "İnter'de Oynamış Alman", trait: "inter_alman" },
+                { text: "Barcelona'da Oynamış Fransız", trait: "barca_fransiz" }
+            ],
+            OZEL_DEFANS: [
+                { text: "Kariyerinde 20+ Gol Atmış Defans", trait: "gol_20_defans" }
             ]
         };
 
@@ -640,27 +683,55 @@
             let slotIndex = 0;
             todayGrid = {};
             const usedTraits = new Set();
+            let ulkeKotas = 0; // Maksimum 3 ülke çıkabilir
+
+            // Tüm kategorileri bir havuzda topluyoruz (Defans hariç)
+            const tumHavuz = [
+                ...kriterKategorileri.ULKE.map(c => ({...c, cat: 'ULKE'})),
+                ...kriterKategorileri.LIG_KULUP.map(c => ({...c, cat: 'LIG'})),
+                ...kriterKategorileri.FIZIKSEL.map(c => ({...c, cat: 'FIZ'}),
+                ...kriterKategorileri.KARIYER.map(c => ({...c, cat: 'KAR'})),
+                ...kriterKategorileri.MELEZ.map(c => ({...c, cat: 'MEL'}))
+            ];
 
             dailyFormationLayout.forEach(rowArr => {
                 rowArr.forEach(pos => {
-                    let pool = [...kriterler.GENEL];
+                    let mevcutHavuz = [...tumHavuz];
                     
-                    if (pos === 'CB' && kriterler.CB) pool = pool.concat(kriterler.CB);
-                    if (pos === 'ST' && kriterler.ST) pool = pool.concat(kriterler.ST);
-
-                    let shuffled = pool.sort(() => 0.5 - rnd());
-                    let selectedCriterion = shuffled.find(c => !usedTraits.has(c.trait));
-                    
-                    if (!selectedCriterion) {
-                        selectedCriterion = { text: "Herhangi Biri", trait: "herkes" };
-                    } else {
-                        usedTraits.add(selectedCriterion.trait);
+                    // Defanslara özel golcü yeteneği eklentisi
+                    if (pos === 'CB' || pos === 'LB' || pos === 'RB') {
+                        mevcutHavuz = mevcutHavuz.concat(kriterKategorileri.OZEL_DEFANS.map(c => ({...c, cat: 'DEF'})));
                     }
+
+                    // Karıştır
+                    let shuffled = mevcutHavuz.sort(() => 0.5 - rnd());
+                    let secilen = null;
+
+                    for (let c of shuffled) {
+                        if (usedTraits.has(c.trait)) continue;
+                        
+                        // Ülke kotası kontrolü
+                        if (c.cat === 'ULKE') {
+                            if (ulkeKotas < 3) {
+                                ulkeKotas++;
+                                secilen = c;
+                                break;
+                            } else {
+                                continue; // Kota dolduysa es geç
+                            }
+                        } else {
+                            secilen = c;
+                            break;
+                        }
+                    }
+                    
+                    if (!secilen) secilen = { text: "Herhangi Biri", trait: "herkes" };
+                    usedTraits.add(secilen.trait);
                     
                     todayGrid[`slot-${slotIndex}`] = {
                         pos: pos,
-                        criteriaText: selectedCriterion.text,
-                        reqTrait: selectedCriterion.trait
+                        criteriaText: secilen.text,
+                        reqTrait: secilen.trait
                     };
                     slotIndex++;
                 });
