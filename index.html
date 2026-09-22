@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Günün Gridi - Efsane Mod</title>
-    <!-- Hem Piksel font (VT323) hem de temiz okunabilmesi için Poppins -->
+    <title>Günün Gridi</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&family=VT323&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -90,10 +89,25 @@
         .play-btn.active-btn:hover { background: #2ecc71; transform: translateY(-2px); }
 
         #db-status {
-            font-size: 18px;
+            font-size: 20px;
             color: #f1c40f;
             margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
         }
+
+        /* KLASİK DÖNEN YÜKLENİYOR ANİMASYONU */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #f1c40f;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         #game-container {
             display: none;
@@ -336,7 +350,7 @@
         <h1>GÜNÜN GRİDİ</h1>
         <input type="text" id="nickname-input" placeholder="Nickini gir..." autocomplete="off">
         <button class="play-btn" id="start-btn" onclick="startGame()" disabled>OYNA</button>
-        <div id="db-status">Efsane İstatistikler Taranıyor ⏳</div>
+        <div id="db-status">YÜKLENİYOR <div class="spinner"></div></div>
     </div>
 
     <div id="game-container">
@@ -411,7 +425,6 @@
                 let statsMap = {};
                 
                 if (appsRes && appsRes.ok) {
-                    statusEl.innerText = "Maç Kayıtları İşleniyor... ⏳";
                     const appsText = await appsRes.text();
                     const appLines = appsText.split('\n');
                     const aHeaders = parseRow(appLines[0].toLowerCase());
@@ -454,7 +467,6 @@
                     }
                 }
 
-                statusEl.innerText = "Yetenekler Eşleştiriliyor... ⏳";
                 const dataText = await playersRes.text();
                 const lines = dataText.split('\n');
                 const headers = parseRow(lines[0].toLowerCase());
@@ -492,7 +504,6 @@
                     const traits = ["herkes"];
                     const pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), compClubs: {}, clubApps: {} };
                     
-                    // --- MİLLİYET & KİŞİSEL ---
                     if(pNat.includes("turkey") || pNat.includes("türkiye")) traits.push("turkiye");
                     if(pNat.includes("brazil")) traits.push("brezilya");
                     if(pNat.includes("argentina")) traits.push("arjantin");
@@ -516,7 +527,6 @@
                     }
                     if (pFoot === 'left') traits.push("sol_ayak");
 
-                    // --- KULÜP EŞLEŞMELERİ (Derbiler ve Devler) ---
                     const c = pStats.clubs;
                     if (c.has('418') && c.has('131')) traits.push("real_barca");
                     if (c.has('418') && c.has('13')) traits.push("real_atletico");
@@ -524,7 +534,6 @@
                     if (c.has('46') && c.has('5')) traits.push("inter_milan");
                     if (c.has('27') && c.has('16')) traits.push("bayern_dortmund");
                     
-                    // 4 Büyükler Derbileri
                     if (c.has('141') && c.has('36')) traits.push("gs_fb");
                     if (c.has('141') && c.has('114')) traits.push("gs_bjk");
                     if (c.has('141') && c.has('449')) traits.push("gs_ts");
@@ -532,7 +541,6 @@
                     if (c.has('36') && c.has('449')) traits.push("fb_ts");
                     if (c.has('114') && c.has('449')) traits.push("bjk_ts");
 
-                    // --- ÖZEL İSTATİSTİKLER ---
                     let top5 = 0;
                     if (pStats.comps.has("GB1")) top5++;
                     if (pStats.comps.has("ES1")) top5++;
@@ -555,7 +563,6 @@
                     if (pStats.appsCount >= 300) traits.push("mac_300");
                     if (pStats.redCards === 0 && pStats.appsCount >= 50) traits.push("sifir_kirmizi");
 
-                    // Özel Melezler (Ülke + Lig)
                     if (pStats.comps.has('TR1')) {
                         if (pNat.includes('brazil')) traits.push("tr_brezilyali");
                         if (pNat.includes('germany')) traits.push("tr_alman");
@@ -563,7 +570,6 @@
                         if (pNat.includes('nigeria')) traits.push("tr_nijeryali");
                         if (pNat.includes('uruguay')) traits.push("tr_uruguayli");
                         
-                        // 4 Büyüklerde oynamamış süper ligçi
                         if (!c.has('141') && !c.has('36') && !c.has('114') && !c.has('449')) {
                             traits.push("dort_buyuk_yok");
                         }
@@ -573,10 +579,8 @@
                     if (c.has('46') && pNat.includes('germany')) traits.push("inter_alman");
                     if (c.has('131') && pNat.includes('france')) traits.push("barca_fransiz");
 
-                    // Defans golcüleri (Sadece savunmalara açılacak)
                     if (pStats.goals >= 20) traits.push("gol_20_defans");
 
-                    // Tek takımda 200+ Maç
                     if (Object.values(pStats.clubApps).some(v => v >= 200)) traits.push("tek_takim_200_mac");
 
                     loadedPlayers.push({ name: pName, img: pImg, traits: traits });
@@ -585,13 +589,13 @@
                 dbPlayers = loadedPlayers;
                 
                 if(dbPlayers.length > 0) {
-                    statusEl.innerText = `✓ Efsane Mod Aktif! (${dbPlayers.length} Oyuncu)`;
+                    statusEl.innerText = "✓ YÜKLENDİ!";
                     statusEl.style.color = "#2ecc71";
                     startBtn.disabled = false;
                     startBtn.classList.add("active-btn");
                 }
             } catch (err) {
-                statusEl.innerText = "⚠ Veritabanı okunamadı!";
+                statusEl.innerText = "⚠ HATA!";
             }
         }
 
@@ -602,7 +606,6 @@
             "352": [["ST", "ST"], ["LM", "CM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]]
         };
 
-        // KATEGORİLERE AYRILMIŞ KRİTERLER (KOTA SİSTEMİ İÇİN)
         const kriterKategorileri = {
             ULKE: [
                 { text: "Brezilyalı", trait: "brezilya" },
@@ -645,7 +648,7 @@
                 { text: "Tek Bir Takımda 200+ Maç", trait: "tek_takim_200_mac" },
                 { text: "Kariyeri Boyu Tek Takımda Oynamış", trait: "tek_takim_kariyer" },
                 { text: "Kariyerinde 300+ Resmi Maç", trait: "mac_300" },
-                { text: "Hiç Kırmızı Kart Görmemiş (50+ Maç)", trait: "sifir_kirmizi" }
+                { text: "Hiç Kırmızı Kart Görmemiş", trait: "sifir_kirmizi" }
             ],
             MELEZ: [
                 { text: "Süper Lig'de Oynamış Brezilyalı", trait: "tr_brezilyali" },
@@ -658,7 +661,7 @@
                 { text: "Barcelona'da Oynamış Fransız", trait: "barca_fransiz" }
             ],
             OZEL_DEFANS: [
-                { text: "Kariyerinde 20+ Gol Atmış Defans", trait: "gol_20_defans" }
+                { text: "Kariyerinde 20+ Gol Atmış", trait: "gol_20_defans" }
             ]
         };
 
@@ -683,13 +686,13 @@
             let slotIndex = 0;
             todayGrid = {};
             const usedTraits = new Set();
-            let ulkeKotas = 0; // Maksimum 3 ülke çıkabilir
+            let ulkeKotas = 0; 
 
-            // Tüm kategorileri bir havuzda topluyoruz (Defans hariç)
+            // İŞTE BURADAKİ PARANTEZ HATASINI DÜZELTTİM 
             const tumHavuz = [
                 ...kriterKategorileri.ULKE.map(c => ({...c, cat: 'ULKE'})),
                 ...kriterKategorileri.LIG_KULUP.map(c => ({...c, cat: 'LIG'})),
-                ...kriterKategorileri.FIZIKSEL.map(c => ({...c, cat: 'FIZ'}),
+                ...kriterKategorileri.FIZIKSEL.map(c => ({...c, cat: 'FIZ'})),
                 ...kriterKategorileri.KARIYER.map(c => ({...c, cat: 'KAR'})),
                 ...kriterKategorileri.MELEZ.map(c => ({...c, cat: 'MEL'}))
             ];
@@ -698,26 +701,23 @@
                 rowArr.forEach(pos => {
                     let mevcutHavuz = [...tumHavuz];
                     
-                    // Defanslara özel golcü yeteneği eklentisi
                     if (pos === 'CB' || pos === 'LB' || pos === 'RB') {
                         mevcutHavuz = mevcutHavuz.concat(kriterKategorileri.OZEL_DEFANS.map(c => ({...c, cat: 'DEF'})));
                     }
 
-                    // Karıştır
                     let shuffled = mevcutHavuz.sort(() => 0.5 - rnd());
                     let secilen = null;
 
                     for (let c of shuffled) {
                         if (usedTraits.has(c.trait)) continue;
                         
-                        // Ülke kotası kontrolü
                         if (c.cat === 'ULKE') {
                             if (ulkeKotas < 3) {
                                 ulkeKotas++;
                                 secilen = c;
                                 break;
                             } else {
-                                continue; // Kota dolduysa es geç
+                                continue; 
                             }
                         } else {
                             secilen = c;
