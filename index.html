@@ -3,387 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Günün Gridi</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&family=VT323&display=swap" rel="stylesheet">
+    <title>Grid 11</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
-        body {
-            font-family: 'VT323', monospace; 
-            margin: 0;
-            padding: 0;
-            background: radial-gradient(circle at center, #0a1f12 0%, #020604 100%);
-            color: #ecf0f1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-size: 24px; 
-        }
-
-        #flash-effect {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: #fff;
-            z-index: 99999;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s ease-out;
-        }
-
-        .flash-active { opacity: 1 !important; transition: none !important; }
-
-        #login-screen {
-            text-align: center;
-            background: rgba(15, 45, 25, 0.6);
-            backdrop-filter: blur(15px);
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 90%;
-            max-width: 350px;
-        }
-
-        #login-screen h1 {
-            margin-top: 0;
-            color: #2ecc71;
-            font-size: 52px;
-            font-weight: normal;
-            letter-spacing: 2px;
-        }
-
-        #nickname-input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 24px;
-            font-family: inherit;
-            box-sizing: border-box;
-            outline: none;
-            text-align: center;
-        }
-
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; background: radial-gradient(circle at center, #0a1f12 0%, #020604 100%); color: #ecf0f1; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        #login-screen { text-align: center; background: rgba(15, 45, 25, 0.6); backdrop-filter: blur(15px); padding: 40px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 350px; }
+        #login-screen h1 { font-weight: 800; margin-top: 0; color: #2ecc71; letter-spacing: 2px; font-size: 32px; }
+        #loading-text { color: #f1c40f; font-size: 14px; font-weight: 600; margin-bottom: 15px; }
+        #nickname-input { width: 100%; padding: 15px; margin-bottom: 20px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 16px; outline: none; text-align: center; }
         #nickname-input:focus { border-color: #2ecc71; }
-
-        .play-btn {
-            background: #555;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            width: 100%;
-            border-radius: 8px;
-            font-size: 32px;
-            cursor: not-allowed;
-            transition: 0.3s;
-            font-family: inherit;
-            letter-spacing: 2px;
-        }
-
-        .play-btn:disabled { background: #555 !important; transform: none !important; }
-        .play-btn.active-btn { background: #27ae60; cursor: pointer; }
-        .play-btn.active-btn:hover { background: #2ecc71; transform: translateY(-2px); }
-
-        #db-status {
-            font-size: 20px;
-            color: #f1c40f;
-            margin-top: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-left-color: #f1c40f;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        #game-container {
-            display: none;
-            width: 100%;
-            max-width: 600px;
-            padding: 15px;
-            box-sizing: border-box;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 0 10px;
-        }
-
-        .user-info { font-size: 32px; color: #2ecc71; text-transform: uppercase; }
-        .score-box {
-            background: rgba(0,0,0,0.5);
-            padding: 6px 16px;
-            border-radius: 8px;
-            color: #f1c40f;
-            border: 1px solid rgba(241, 196, 15, 0.3);
-            font-size: 26px;
-        }
-
-        .pitch {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 15px 5px;
-        }
-
-        .row {
-            display: flex;
-            justify-content: space-evenly;
-            margin-bottom: 15px;
-        }
-
-        .slot-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 80px;
-            text-align: center;
-        }
-
-        .slot {
-            width: 65px;
-            height: 85px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px dashed rgba(255,255,255,0.3);
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: 0.3s;
-            background-size: cover;
-            background-position: center top;
-            font-size: 28px;
-            color: rgba(255,255,255,0.3);
-            font-family: 'Poppins', sans-serif; 
-        }
-
-        .slot.filled {
-            border: 2px solid #2ecc71;
-            color: transparent; 
-        }
-
-        .pos-badge {
-            background: #000;
-            font-size: 18px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: -12px;
-            z-index: 2;
-            border: 1px solid #f1c40f;
-            color: #f1c40f;
-        }
-
-        .criteria {
-            font-size: 15px;
-            margin-top: 6px;
-            color: #bdc3c7;
-            line-height: 1.1;
-        }
-
-        .player-name {
-            font-family: 'Poppins', sans-serif; 
-            font-size: 10px;
-            font-weight: 800;
-            margin-top: 4px;
-            color: #fff;
-            display: none;
-            background: rgba(0,0,0,0.7);
-            padding: 2px 4px;
-            border-radius: 4px;
-        }
-
-        #final-share-btn {
-            display: none;
-            width: 100%;
-            margin-top: 20px;
-            padding: 12px;
-            background: #fff;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-size: 32px;
-            cursor: pointer;
-            transition: 0.3s;
-            font-family: inherit;
-        }
-
+        .play-btn { background: #27ae60; color: white; border: none; padding: 15px 20px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
+        .play-btn:disabled { background: #7f8c8d; cursor: not-allowed; }
+        .play-btn:hover:not(:disabled) { background: #2ecc71; transform: translateY(-2px); }
+        #game-container { display: none; width: 100%; max-width: 600px; padding: 20px; box-sizing: border-box; }
+        #capture-area { padding: 25px 15px; border-radius: 16px; background: linear-gradient(135deg, #0a1f12 0%, #020604 100%); border: 3px solid #2ecc71; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .capture-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(46, 204, 113, 0.3); }
+        .capture-header h2 { margin: 0; color: #fff; font-size: 22px; font-weight: 800; text-transform: uppercase; }
+        .score-badge { display: inline-block; margin-top: 10px; background: #f1c40f; padding: 6px 16px; border-radius: 20px; font-weight: 800; color: #000; font-size: 14px; }
+        .pitch { background: rgba(255, 255, 255, 0.02); border-radius: 12px; padding: 10px 5px; }
+        .row { display: flex; justify-content: space-evenly; margin-bottom: 20px; }
+        .slot-container { display: flex; flex-direction: column; align-items: center; width: 80px; text-align: center; }
+        .slot { width: 60px; height: 85px; background: rgba(0, 0, 0, 0.6); border: 2px dashed rgba(255,255,255,0.3); border-radius: 8px; display: flex; justify-content: center; align-items: center; cursor: pointer; background-size: cover; background-position: center top; font-size: 24px; color: rgba(255,255,255,0.3); }
+        .slot.filled { border: 2px solid #2ecc71; color: transparent; }
+        .pos-badge { background: #000; font-size: 10px; font-weight: 800; padding: 3px 6px; border-radius: 4px; margin-top: -10px; z-index: 2; border: 1px solid #f1c40f; color: #f1c40f; }
+        .criteria { font-size: 9px; margin-top: 6px; color: #bdc3c7; font-weight: 600; line-height: 1.1; padding: 2px; }
+        .player-name { font-size: 10px; font-weight: 800; margin-top: 5px; color: #fff; display: none; background: rgba(0,0,0,0.7); padding: 2px 4px; border-radius: 4px; }
+        #final-share-btn { display: none; width: 100%; margin-top: 25px; padding: 15px; background: #fff; color: #000; border: none; border-radius: 8px; font-size: 18px; font-weight: 800; cursor: pointer; text-transform: uppercase; }
         #final-share-btn:hover { background: #2ecc71; color: #fff; }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-
-        #search-modal-content {
-            background: #111;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .search-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            color: #2ecc71;
-            font-size: 30px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 20px;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            box-sizing: border-box;
-            outline: none;
-            background: rgba(0,0,0,0.4);
-            color: #fff;
-        }
-
-        input[type="text"]:focus { border-color: #2ecc71; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 10; }
+        #search-modal-content, #result-modal-content { background: #111; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .search-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #2ecc71; font-weight: 800; }
+        #generated-image-preview { width: 100%; max-height: 55vh; object-fit: contain; border-radius: 12px; border: 2px solid #2ecc71; margin-bottom: 20px; }
+        .social-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 15px; }
+        .social-btn { padding: 12px; border: none; border-radius: 8px; font-weight: 800; font-size: 14px; cursor: pointer; color: #fff; }
+        .btn-download { background: #34495e; grid-column: span 2; font-size: 16px;}
+        .btn-tw { background: #000; border: 1px solid #333; }
+        .btn-ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+        .btn-wp { background: #25D366; grid-column: span 2;}
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; margin-bottom: 15px; background: rgba(0,0,0,0.4); color: #fff; outline: none; }
         input[type="text"].error { border-color: #e74c3c; animation: shake 0.4s; }
-
-        .results {
-            max-height: 250px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .player-item {
-            display: flex;
-            align-items: center;
-            background: rgba(255,255,255,0.05);
-            padding: 10px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-family: 'Poppins', sans-serif; 
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        .player-item img {
-            width: 35px;
-            height: 35px;
-            border-radius: 5px;
-            margin-right: 15px;
-            object-fit: cover;
-        }
-
-        #result-modal-content {
-            background: transparent;
-            padding: 0;
-            border: none;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        #ss-card {
-            background-color: #0b1c11; 
-            border: 2px solid #2ecc71; 
-            border-radius: 12px;
-            padding: 20px;
-            width: 85%; 
-            max-width: 400px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.9);
-        }
-
-        .close-btn {
-            margin-top: 20px;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 8px;
-            background: #fff;
-            color: #000;
-            font-family: inherit;
-            cursor: pointer;
-            font-size: 28px;
-        }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            50% { transform: translateX(6px); }
-            75% { transform: translateX(-6px); }
-            100% { transform: translateX(0); }
-        }
+        .results { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; text-align: left; }
+        .player-item { display: flex; align-items: center; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .player-item img { width: 35px; height: 35px; border-radius: 5px; margin-right: 15px; object-fit: cover; }
+        .close-btn { padding: 12px; width: 100%; border: none; border-radius: 6px; background: transparent; color: #bdc3c7; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); font-weight: 800; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-6px); } 100% { transform: translateX(0); } }
     </style>
 </head>
 <body>
 
-    <div id="flash-effect"></div>
-
     <div id="login-screen">
-        <h1>GÜNÜN GRİDİ</h1>
-        <input type="text" id="nickname-input" placeholder="Nickini gir..." autocomplete="off">
+        <h1>GRID 11</h1>
+        <div id="loading-text">Veritabanı Hazırlanıyor... (1/3)</div>
+        <input type="text" id="nickname-input" placeholder="Nickname girin..." autocomplete="off">
         <button class="play-btn" id="start-btn" onclick="startGame()" disabled>OYNA</button>
-        <div id="db-status">YÜKLENİYOR <div class="spinner"></div></div>
     </div>
 
     <div id="game-container">
-        <div class="header">
-            <div class="user-info" id="display-nickname">---</div>
-            <div class="score-box">Skor: <span id="scoreVal">0</span></div>
+        <div id="capture-area">
+            <div class="capture-header">
+                <h2 id="capture-title">---'in İlk 11'i</h2>
+                <div class="score-badge">Skor: <span id="scoreVal">0</span></div>
+            </div>
+            <div class="pitch" id="pitch"></div>
         </div>
-
-        <div class="pitch" id="pitch"></div>
-        <button id="final-share-btn" onclick="showShareScreen()">PAYLAŞ</button>
+        <button id="final-share-btn" onclick="generateShareImage()">PAYLAŞ</button>
     </div>
 
     <div class="modal" id="search-modal">
         <div id="search-modal-content">
             <div class="search-header">
-                <span id="search-pos-title">ARANIYOR</span>
-                <span style="cursor: pointer; color:#e74c3c; font-family: 'Poppins', sans-serif;" onclick="closeModal('search-modal')">✖</span>
+                <span id="search-pos-title">Oyuncu Aranıyor</span>
+                <span style="font-size: 14px; color: #bdc3c7; cursor: pointer; padding: 0 5px;" onclick="closeModal('search-modal')">X</span>
             </div>
-            <input type="text" id="searchInput" placeholder="Topçu ara..." autocomplete="off">
+            <input type="text" id="searchInput" placeholder="Futbolcu ara..." autocomplete="off">
             <div class="results" id="resultsList"></div>
         </div>
     </div>
 
     <div class="modal" id="result-modal">
         <div id="result-modal-content">
-            <div id="ss-card">
-                <h2 id="ss-title" style="margin: 0 0 10px 0; color: #fff; text-align: center; text-transform: uppercase;">---'in Kadrosu</h2>
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <span id="ss-score" style="background:#f1c40f; color:#000; padding:4px 15px; border-radius:20px;">Skor: 0</span>
-                </div>
-                <div id="ss-pitch-container"></div>
+            <img id="generated-image-preview" src="">
+            <div class="social-grid">
+                <button class="social-btn btn-tw" onclick="shareToApps()">Twitter</button>
+                <button class="social-btn btn-ig" onclick="shareToApps()">Instagram</button>
+                <button class="social-btn btn-wp" onclick="shareToApps()">WhatsApp</button>
+                <button class="social-btn btn-download" onclick="downloadImage()">Resmi İndir</button>
             </div>
-            <button class="close-btn" onclick="shareOrDownload()">İNDİR / PAYLAŞ</button>
-            <button class="close-btn" style="background:#e74c3c; color:#fff; margin-top:10px;" onclick="closeModal('result-modal')">KAPAT</button>
+            <button class="close-btn" onclick="closeModal('result-modal')">Kapat</button>
         </div>
     </div>
 
@@ -392,325 +100,50 @@
         let filledCount = 0;
         let activeSlotId = null;
         let username = "";
-        
-        let dailyFormationLayout = [];
-        let todayGrid = {};
+        let generatedImageData = "";
         let dbPlayers = []; 
+        let todayGrid = {};
+        let dailyFormationLayout = [];
 
-        const parseRow = (str) => {
-            let arr = [], quote = false, val = '';
-            for (let i = 0; i < str.length; i++) {
-                let cc = str[i];
-                if (cc === '"') quote = !quote;
-                else if (cc === ',' && !quote) { arr.push(val.trim()); val = ''; }
-                else val += cc;
-            }
-            arr.push(val.trim());
-            return arr;
+        const kriterler = {
+            "gol_100": { text: "100+ Kariyer Golü", check: p => p.g >= 100 },
+            "gol_200": { text: "200+ Kariyer Golü", check: p => p.g >= 200 },
+            "gol_400": { text: "400+ Kariyer Golü", check: p => p.g >= 400 },
+            "asist_100": { text: "100+ Asist", check: p => p.a >= 100 },
+            "kirmizi_3": { text: "3+ Kırmızı Kart", check: p => p.r >= 3 },
+            "kirmizi_5": { text: "5+ Kırmızı Kart", check: p => p.r >= 5 },
+            "boy_190_ust": { text: "190cm'den Uzun", check: p => p.hgt > 190 },
+            "boy_175_alt": { text: "175cm'den Kısa", check: p => p.hgt < 175 && p.hgt > 0 },
+            "sol_ayak": { text: "Sol Ayaklı", check: p => p.foot.includes("left") },
+            "sag_ayak": { text: "Sağ Ayaklı", check: p => p.foot.includes("right") },
+            "genc_yetenek": { text: "23 Yaş ve Altı", check: p => p.age <= 23 && p.age > 0 },
+            "tecrubeli": { text: "33 Yaş ve Üstü", check: p => p.age >= 33 },
+            "super_lig": { text: "Süper Lig'de Oynamış", check: p => p.comps.includes("TR1") },
+            "premier_lig": { text: "Premier Lig'de Oynamış", check: p => p.comps.includes("GB1") },
+            "serie_a": { text: "Serie A'da Oynamış", check: p => p.comps.includes("IT1") },
+            "la_liga": { text: "La Liga'da Oynamış", check: p => p.comps.includes("ES1") },
+            "bundesliga": { text: "Bundesliga'da Oynamış", check: p => p.comps.includes("L1") },
+            "ligue_1": { text: "Ligue 1'de Oynamış", check: p => p.comps.includes("FR1") },
+            "brezilya": { text: "Brezilyalı", check: p => p.nat.includes("brazil") },
+            "arjantin": { text: "Arjantinli", check: p => p.nat.includes("argentina") },
+            "turkiye": { text: "Türk", check: p => p.nat.includes("turkey") || p.nat.includes("türkiye") },
+            "almanya": { text: "Alman", check: p => p.nat.includes("germany") },
+            "ingiltere": { text: "İngiliz", check: p => p.nat.includes("england") },
+            "ispanya": { text: "İspanyol", check: p => p.nat.includes("spain") },
+            "fransa": { text: "Fransız", check: p => p.nat.includes("france") },
+            "hollanda": { text: "Hollandalı", check: p => p.nat.includes("netherlands") },
+            "portekiz": { text: "Portekizli", check: p => p.nat.includes("portugal") },
+            "italya": { text: "İtalyan", check: p => p.nat.includes("italy") },
+            "tek_takim": { text: "Kariyer Boyu Tek Takım", check: p => p.teams === 1 },
+            "gezgin": { text: "8+ Takımda Oynamış", check: p => p.teams >= 8 },
+            "degerli_50": { text: "Piyasa Değeri 50M+", check: p => p.mv >= 50000000 },
+            "ucuz_iskarta": { text: "Max Değeri 5M Altı", check: p => p.mv < 5000000 && p.mv > 0 }
         };
-
-        async function loadLargeDatabase() {
-            const statusEl = document.getElementById("db-status");
-            const startBtn = document.getElementById("start-btn");
-
-            try {
-                const [playersRes, appsRes, transRes] = await Promise.all([
-                    fetch('./players.csv?v=' + new Date().getTime()),
-                    fetch('./appearances.csv?v=' + new Date().getTime()).catch(() => null),
-                    fetch('./transfers.csv?v=' + new Date().getTime()).catch(() => null)
-                ]);
-                
-                if(!playersRes.ok) throw new Error("players.csv yok!");
-
-                let statsMap = {};
-                
-                // 1. OYUNCU TRANSFER GEÇMİŞİ (En sağlam kulüp kontrolü)
-                if (transRes && transRes.ok) {
-                    const transText = await transRes.text();
-                    const tLines = transText.split('\n');
-                    const tHeaders = parseRow(tLines[0].toLowerCase());
-                    
-                    const tPidIdx = tHeaders.indexOf('player_id');
-                    const fromClubIdx = tHeaders.indexOf('from_club_id');
-                    const toClubIdx = tHeaders.indexOf('to_club_id');
-
-                    for (let i = 1; i < tLines.length; i++) {
-                        if(!tLines[i] || tLines[i].trim() === "") continue;
-                        const cols = parseRow(tLines[i]);
-                        if (!cols[tPidIdx]) continue;
-                        
-                        // ID'yi saf sayıya çevir
-                        const pid = cols[tPidIdx].replace(/[^0-9]/g, '');
-                        if (!pid) continue;
-
-                        if (!statsMap[pid]) {
-                            statsMap[pid] = { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), compClubs: {}, clubApps: {} };
-                        }
-                        
-                        if (fromClubIdx > -1 && cols[fromClubIdx]) statsMap[pid].clubs.add(cols[fromClubIdx].replace(/[^0-9]/g, ''));
-                        if (toClubIdx > -1 && cols[toClubIdx]) statsMap[pid].clubs.add(cols[toClubIdx].replace(/[^0-9]/g, ''));
-                    }
-                }
-                
-                // 2. MAÇ İSTATİSTİKLERİ VE LİGLER
-                if (appsRes && appsRes.ok) {
-                    const appsText = await appsRes.text();
-                    const appLines = appsText.split('\n');
-                    const aHeaders = parseRow(appLines[0].toLowerCase());
-                    
-                    const pIdIdx = aHeaders.indexOf('player_id');
-                    const aGoalsIdx = aHeaders.indexOf('goals');
-                    const aRedIdx = aHeaders.indexOf('red_cards');
-                    let aClubIdx = aHeaders.indexOf('player_club_id');
-                    if(aClubIdx === -1) aClubIdx = aHeaders.indexOf('club_id');
-                    const aCompIdx = aHeaders.indexOf('competition_id'); 
-
-                    for (let i = 1; i < appLines.length; i++) {
-                        if(!appLines[i] || appLines[i].trim() === "") continue;
-                        const cols = parseRow(appLines[i]);
-                        if (!cols[pIdIdx]) continue;
-                        
-                        const pid = cols[pIdIdx].replace(/[^0-9]/g, '');
-                        if (!pid) continue;
-
-                        if (!statsMap[pid]) {
-                            statsMap[pid] = { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), compClubs: {}, clubApps: {} };
-                        }
-                        
-                        statsMap[pid].appsCount++;
-                        if (aGoalsIdx > -1 && cols[aGoalsIdx]) statsMap[pid].goals += parseInt(cols[aGoalsIdx]) || 0;
-                        if (aRedIdx > -1 && cols[aRedIdx]) statsMap[pid].redCards += parseInt(cols[aRedIdx]) || 0;
-                        
-                        if (aClubIdx > -1 && cols[aClubIdx]) {
-                            let cid = cols[aClubIdx].replace(/[^0-9]/g, '');
-                            if(cid) {
-                                statsMap[pid].clubs.add(cid);
-                                if (!statsMap[pid].clubApps[cid]) statsMap[pid].clubApps[cid] = 0;
-                                statsMap[pid].clubApps[cid]++;
-                            }
-                        }
-                        
-                        if (aCompIdx > -1 && cols[aCompIdx]) {
-                            let l_id = cols[aCompIdx].trim().replace(/['"]/g, '').toUpperCase();
-                            if(l_id) {
-                                statsMap[pid].comps.add(l_id);
-                                let cid = (aClubIdx > -1 && cols[aClubIdx]) ? cols[aClubIdx].replace(/[^0-9]/g, '') : null;
-                                if (cid) {
-                                    if (!statsMap[pid].compClubs[l_id]) statsMap[pid].compClubs[l_id] = new Set();
-                                    statsMap[pid].compClubs[l_id].add(cid);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 3. OYUNCU ANA DOSYASI VE YETENEK DAĞITIMI
-                const dataText = await playersRes.text();
-                const lines = dataText.split('\n');
-                const headers = parseRow(lines[0].toLowerCase());
-                
-                const nameIdx = headers.indexOf('name');
-                const posIdx = headers.indexOf('position');
-                const subPosIdx = headers.indexOf('sub_position');
-                const nationIdx = headers.indexOf('country_of_citizenship');
-                const imgIdx = headers.indexOf('image_url');
-                const idIdx = headers.indexOf('player_id');
-                const currentClubIdx = headers.indexOf('current_club_id');
-                const heightIdx = headers.indexOf('height_in_cm');
-                const dobIdx = headers.indexOf('date_of_birth');
-                const footIdx = headers.indexOf('foot');
-
-                const loadedPlayers = [];
-                
-                for(let i = 1; i < lines.length; i++) {
-                    const line = lines[i];
-                    if(!line || line.trim() === "") continue;
-                    
-                    const cols = parseRow(line);
-                    const pName = cols[nameIdx] || '';
-                    if(pName.length < 2) continue;
-
-                    let pid = cols[idIdx] ? cols[idIdx].replace(/[^0-9]/g, '') : null;
-                    if (!pid) continue;
-
-                    const pNat = (cols[nationIdx] || '').toLowerCase();
-                    const pPos = ((cols[posIdx] || '') + " " + (cols[subPosIdx] || '')).toUpperCase();
-                    const pFoot = footIdx > -1 ? (cols[footIdx] || '').toLowerCase() : '';
-                    
-                    let pImg = 'https://cdn.sofifa.net/players/notfound_0_120.png';
-                    if (imgIdx > -1 && cols[imgIdx] && cols[imgIdx].length > 5) pImg = cols[imgIdx];
-                    else pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
-                    if (pImg.includes('transfermarkt')) pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
-
-                    const traits = ["herkes"];
-                    const pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), compClubs: {}, clubApps: {} };
-                    
-                    // Şu anki kulübünü de ekle garanti olsun
-                    if (currentClubIdx > -1 && cols[currentClubIdx]) {
-                        let ccid = cols[currentClubIdx].replace(/[^0-9]/g, '');
-                        if (ccid) pStats.clubs.add(ccid);
-                    }
-
-                    if(pNat.includes("turkey") || pNat.includes("türkiye")) traits.push("turkiye");
-                    if(pNat.includes("brazil")) traits.push("brezilya");
-                    if(pNat.includes("argentina")) traits.push("arjantin");
-                    if(pNat.includes("germany")) traits.push("almanya");
-                    if(pNat.includes("england")) traits.push("ingiltere");
-                    if(pNat.includes("spain")) traits.push("ispanya");
-                    if(pNat.includes("france")) traits.push("fransa");
-                    if(pNat.includes("italy")) traits.push("italya");
-                    if(pNat.includes("netherlands") || pNat.includes("holland")) traits.push("hollanda");
-                    if(pNat.includes("uruguay")) traits.push("uruguay");
-                    if(pNat.includes("nigeria")) traits.push("nijerya");
-
-                    if (heightIdx > -1 && cols[heightIdx]) {
-                        const h = parseInt(cols[heightIdx].replace(/[^0-9]/g, ''));
-                        if (h <= 175) traits.push("boy_175_alt");
-                    }
-                    if (dobIdx > -1 && cols[dobIdx] && cols[dobIdx].length >= 4) {
-                        const year = parseInt(cols[dobIdx].substring(0, 4));
-                        if (year >= 1990 && year <= 1999) traits.push("dogum_90lar");
-                        if (year >= 2000) traits.push("dogum_2000ler");
-                    }
-                    if (pFoot === 'left') traits.push("sol_ayak");
-
-                    const c = pStats.clubs;
-                    // KULÜP ID'LERİ KONTROLÜ
-                    if (c.has('418') && c.has('131')) traits.push("real_barca");
-                    if (c.has('418') && c.has('13')) traits.push("real_atletico");
-                    if (c.has('131') && c.has('13')) traits.push("barca_atletico");
-                    if (c.has('46') && c.has('5')) traits.push("inter_milan");
-                    if (c.has('27') && c.has('16')) traits.push("bayern_dortmund");
-                    
-                    if (c.has('141') && c.has('36')) traits.push("gs_fb");
-                    if (c.has('141') && c.has('114')) traits.push("gs_bjk");
-                    if (c.has('141') && c.has('449')) traits.push("gs_ts");
-                    if (c.has('36') && c.has('114')) traits.push("fb_bjk");
-                    if (c.has('36') && c.has('449')) traits.push("fb_ts");
-                    if (c.has('114') && c.has('449')) traits.push("bjk_ts");
-
-                    let top5 = 0;
-                    if (pStats.comps.has("GB1")) top5++;
-                    if (pStats.comps.has("ES1")) top5++;
-                    if (pStats.comps.has("IT1")) top5++;
-                    if (pStats.comps.has("L1")) top5++;
-                    if (pStats.comps.has("FR1")) top5++;
-                    
-                    if (top5 >= 3) traits.push("top5_3_lig");
-                    if (top5 === 0 && pStats.appsCount > 10) traits.push("bes_buyuk_yok");
-
-                    if (pStats.compClubs['IT1'] && pStats.compClubs['IT1'].size >= 3) traits.push("seriea_3_takim");
-                    if (pStats.compClubs['TR1'] && pStats.compClubs['TR1'].size >= 3) traits.push("superlig_3_takim");
-
-                    let ulkeSayisi = Array.from(pStats.comps).filter(x => x.endsWith('1')).length;
-                    if (ulkeSayisi >= 4) traits.push("ulke_4_farkli");
-
-                    if (pStats.clubs.size >= 7) traits.push("takim_7_fazla");
-                    if (pStats.clubs.size === 1 && pStats.appsCount >= 50) traits.push("tek_takim_kariyer");
-                    
-                    if (pStats.appsCount >= 300) traits.push("mac_300");
-                    if (pStats.redCards === 0 && pStats.appsCount >= 50) traits.push("sifir_kirmizi");
-
-                    if (pStats.comps.has('TR1')) {
-                        if (pNat.includes('brazil')) traits.push("tr_brezilyali");
-                        if (pNat.includes('germany')) traits.push("tr_alman");
-                        if (pNat.includes('italy')) traits.push("tr_italyan");
-                        if (pNat.includes('nigeria')) traits.push("tr_nijeryali");
-                        if (pNat.includes('uruguay')) traits.push("tr_uruguayli");
-                        
-                        if (!c.has('141') && !c.has('36') && !c.has('114') && !c.has('449')) {
-                            traits.push("dort_buyuk_yok");
-                        }
-                    }
-
-                    if (c.has('31') && pNat.includes('italy')) traits.push("liv_italyan");
-                    if (c.has('46') && pNat.includes('germany')) traits.push("inter_alman");
-                    if (c.has('131') && pNat.includes('france')) traits.push("barca_fransiz");
-
-                    if (pStats.goals >= 20) traits.push("gol_20_defans");
-
-                    if (Object.values(pStats.clubApps).some(v => v >= 200)) traits.push("tek_takim_200_mac");
-
-                    loadedPlayers.push({ name: pName, img: pImg, traits: traits });
-                }
-
-                dbPlayers = loadedPlayers;
-                
-                if(dbPlayers.length > 0) {
-                    statusEl.innerHTML = "✓ YÜKLENDİ!";
-                    statusEl.style.color = "#2ecc71";
-                    startBtn.disabled = false;
-                    startBtn.classList.add("active-btn");
-                }
-            } catch (err) {
-                statusEl.innerHTML = "⚠ HATA!";
-            }
-        }
 
         const dizilisler = {
-            "442": [["ST", "ST"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "433": [["LM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "4231": [["ST"], ["LM", "CM", "RM"], ["CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
-            "352": [["ST", "ST"], ["LM", "CM", "CM", "CM", "RM"], ["CB", "CB", "CB"], ["GK"]]
-        };
-
-        const kriterKategorileri = {
-            ULKE: [
-                { text: "Brezilyalı", trait: "brezilya" },
-                { text: "Arjantinli", trait: "arjantin" },
-                { text: "Türk", trait: "turkiye" },
-                { text: "Alman", trait: "almanya" },
-                { text: "İngiliz", trait: "ingiltere" },
-                { text: "İspanyol", trait: "ispanya" },
-                { text: "Fransız", trait: "fransa" },
-                { text: "İtalyan", trait: "italya" },
-                { text: "Hollandalı", trait: "hollanda" }
-            ],
-            LIG_KULUP: [
-                { text: "Real Madrid & Barcelona", trait: "real_barca" },
-                { text: "Real Madrid & Atl. Madrid", trait: "real_atletico" },
-                { text: "Barcelona & Atl. Madrid", trait: "barca_atletico" },
-                { text: "İnter & Milan", trait: "inter_milan" },
-                { text: "Bayern & Dortmund", trait: "bayern_dortmund" },
-                { text: "Galatasaray & Fenerbahçe", trait: "gs_fb" },
-                { text: "Galatasaray & Beşiktaş", trait: "gs_bjk" },
-                { text: "Galatasaray & Trabzonspor", trait: "gs_ts" },
-                { text: "Fenerbahçe & Beşiktaş", trait: "fb_bjk" },
-                { text: "Fenerbahçe & Trabzonspor", trait: "fb_ts" },
-                { text: "Beşiktaş & Trabzonspor", trait: "bjk_ts" },
-                { text: "5 Büyük Ligin 3'ünde Oynamış", trait: "top5_3_lig" },
-                { text: "Serie A'da 3 Farklı Takım", trait: "seriea_3_takim" },
-                { text: "Süper Lig'de 3 Farklı Takım", trait: "superlig_3_takim" },
-                { text: "5 Büyük Ligde Hiç Oynamamış", trait: "bes_buyuk_yok" },
-                { text: "Süper Lig'de 4 Büyükte Oynamamış", trait: "dort_buyuk_yok" }
-            ],
-            FIZIKSEL: [
-                { text: "Sol Ayaklı", trait: "sol_ayak" },
-                { text: "1.75m ve Altı Boy", trait: "boy_175_alt" },
-                { text: "90'lar Doğumlu (90-99)", trait: "dogum_90lar" },
-                { text: "2000 ve Sonrası Doğumlu", trait: "dogum_2000ler" }
-            ],
-            KARIYER: [
-                { text: "En Az 4 Farklı Ülkede Oynamış", trait: "ulke_4_farkli" },
-                { text: "Kariyerinde 7+ Takımda Oynamış", trait: "takim_7_fazla" },
-                { text: "Tek Bir Takımda 200+ Maç", trait: "tek_takim_200_mac" },
-                { text: "Kariyeri Boyu Tek Takımda Oynamış", trait: "tek_takim_kariyer" },
-                { text: "Kariyerinde 300+ Resmi Maç", trait: "mac_300" },
-                { text: "Hiç Kırmızı Kart Görmemiş", trait: "sifir_kirmizi" }
-            ],
-            MELEZ: [
-                { text: "Süper Lig'de Oynamış Brezilyalı", trait: "tr_brezilyali" },
-                { text: "Süper Lig'de Oynamış Alman", trait: "tr_alman" },
-                { text: "Süper Lig'de Oynamış İtalyan", trait: "tr_italyan" },
-                { text: "Süper Lig'de Oynamış Nijeryalı", trait: "tr_nijeryali" },
-                { text: "Süper Lig'de Oynamış Uruguaylı", trait: "tr_uruguayli" },
-                { text: "Liverpool'da Oynamış İtalyan", trait: "liv_italyan" },
-                { text: "İnter'de Oynamış Alman", trait: "inter_alman" },
-                { text: "Barcelona'da Oynamış Fransız", trait: "barca_fransiz" }
-            ],
-            OZEL_DEFANS: [
-                { text: "Kariyerinde 20+ Gol Atmış", trait: "gol_20_defans" }
-            ]
+            "442": [["ST", "ST"], ["RM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "433": [["RM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
+            "4231": [["ST"], ["RM", "CM", "RM"], ["CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]]
         };
 
         function mulberry32(a) {
@@ -719,6 +152,88 @@
               t = Math.imul(t ^ t >>> 15, t | 1);
               t ^= t + Math.imul(t ^ t >>> 7, t | 61);
               return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+
+        function parseCSV(url) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(url, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: results => resolve(results.data),
+                    error: err => reject(err)
+                });
+            });
+        }
+
+        async function loadAllDatabases() {
+            const statusEl = document.getElementById("loading-text");
+            try {
+                statusEl.innerText = "İstatistikler Çekiliyor... (1/3)";
+                const appsData = await parseCSV('appearances.csv');
+                const appsMap = new Map();
+                for (let i = 0; i < appsData.length; i++) {
+                    let row = appsData[i];
+                    let pid = row.player_id;
+                    if (!appsMap.has(pid)) appsMap.set(pid, {g:0, a:0, r:0, comps: new Set()});
+                    let p = appsMap.get(pid);
+                    p.g += parseInt(row.goals || 0);
+                    p.a += parseInt(row.assists || 0);
+                    p.r += parseInt(row.red_cards || 0);
+                    if (row.competition_id) p.comps.add(row.competition_id);
+                }
+                appsData.length = 0; 
+
+                statusEl.innerText = "Transferler Çekiliyor... (2/3)";
+                const transData = await parseCSV('transfers.csv');
+                const transMap = new Map();
+                for (let i = 0; i < transData.length; i++) {
+                    let row = transData[i];
+                    let pid = row.player_id;
+                    if (!transMap.has(pid)) transMap.set(pid, new Set());
+                    if (row.to_club_id) transMap.get(pid).add(row.to_club_id);
+                }
+                transData.length = 0;
+
+                statusEl.innerText = "Kadro Harmanlanıyor... (3/3)";
+                const playersData = await parseCSV('players.csv');
+                dbPlayers = playersData.map(row => {
+                    let pid = row.player_id;
+                    let app = appsMap.get(pid) || {g:0, a:0, r:0, comps: new Set()};
+                    let trans = transMap.get(pid) || new Set();
+                    
+                    let birthYear = row.date_of_birth && row.date_of_birth.length >= 4 ? parseInt(row.date_of_birth.substring(0, 4)) : 0;
+                    let calculatedAge = birthYear > 0 ? (2026 - birthYear) : 0;
+
+                    return {
+                        id: pid,
+                        name: row.name,
+                        img: row.image_url,
+                        nat: row.country_of_citizenship ? row.country_of_citizenship.toLowerCase() : "",
+                        foot: row.foot ? row.foot.toLowerCase() : "",
+                        age: calculatedAge,
+                        hgt: parseInt(row.height_in_cm || 0),
+                        mv: parseInt(row.highest_market_value_in_eur || 0),
+                        g: app.g,
+                        a: app.a,
+                        r: app.r,
+                        comps: Array.from(app.comps),
+                        teams: trans.size
+                    };
+                });
+                
+                playersData.length = 0;
+                appsMap.clear();
+                transMap.clear();
+
+                statusEl.innerText = `İşlem Tamam! Toplam: ${dbPlayers.length} Oyuncu.`;
+                statusEl.style.color = "#2ecc71";
+                document.getElementById("start-btn").disabled = false;
+
+            } catch (err) {
+                statusEl.innerText = "Bağlantı Hatası! Dosya isimlerini kontrol et.";
+                statusEl.style.color = "#e74c3c";
             }
         }
 
@@ -731,54 +246,23 @@
             const selKey = formKeys[Math.floor(rnd() * formKeys.length)];
             dailyFormationLayout = dizilisler[selKey];
 
+            let kriterListesi = Object.keys(kriterler);
+            
+            for (let i = kriterListesi.length - 1; i > 0; i--) {
+                const j = Math.floor(rnd() * (i + 1));
+                [kriterListesi[i], kriterListesi[j]] = [kriterListesi[j], kriterListesi[i]];
+            }
+
             let slotIndex = 0;
             todayGrid = {};
-            const usedTraits = new Set();
-            let ulkeKotas = 0; 
-
-            const tumHavuz = [
-                ...kriterKategorileri.ULKE.map(c => ({...c, cat: 'ULKE'})),
-                ...kriterKategorileri.LIG_KULUP.map(c => ({...c, cat: 'LIG'})),
-                ...kriterKategorileri.FIZIKSEL.map(c => ({...c, cat: 'FIZ'})),
-                ...kriterKategorileri.KARIYER.map(c => ({...c, cat: 'KAR'})),
-                ...kriterKategorileri.MELEZ.map(c => ({...c, cat: 'MEL'}))
-            ];
 
             dailyFormationLayout.forEach(rowArr => {
                 rowArr.forEach(pos => {
-                    let mevcutHavuz = [...tumHavuz];
-                    
-                    if (pos === 'CB' || pos === 'LB' || pos === 'RB') {
-                        mevcutHavuz = mevcutHavuz.concat(kriterKategorileri.OZEL_DEFANS.map(c => ({...c, cat: 'DEF'})));
-                    }
-
-                    let shuffled = mevcutHavuz.sort(() => 0.5 - rnd());
-                    let secilen = null;
-
-                    for (let c of shuffled) {
-                        if (usedTraits.has(c.trait)) continue;
-                        
-                        if (c.cat === 'ULKE') {
-                            if (ulkeKotas < 3) {
-                                ulkeKotas++;
-                                secilen = c;
-                                break;
-                            } else {
-                                continue; 
-                            }
-                        } else {
-                            secilen = c;
-                            break;
-                        }
-                    }
-                    
-                    if (!secilen) secilen = { text: "Herhangi Biri", trait: "herkes" };
-                    usedTraits.add(secilen.trait);
+                    const secilenKey = kriterListesi.pop(); 
                     
                     todayGrid[`slot-${slotIndex}`] = {
                         pos: pos,
-                        criteriaText: secilen.text,
-                        reqTrait: secilen.trait
+                        criteriaKey: secilenKey
                     };
                     slotIndex++;
                 });
@@ -787,25 +271,26 @@
 
         window.onload = () => {
             generateDailyGrid(); 
+            loadAllDatabases(); 
             const savedName = localStorage.getItem("grid11_username");
             if (savedName) document.getElementById("nickname-input").value = savedName;
-            loadLargeDatabase(); 
         };
 
-        function normalizeMetin(metin) {
-            return metin.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i')
-                        .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        function normalizeMetin(m) {
+            if(!m) return "";
+            return m.replace(/İ/g, 'i').replace(/I/g, 'i').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
         function startGame() {
             const input = document.getElementById("nickname-input").value.trim();
-            if(input.length < 3) return alert("En az 3 harf girmelisin.");
+            if(input.length < 3) return alert("En az 3 harfli bir nickname gir.");
             
             username = input;
             localStorage.setItem("grid11_username", username);
-            document.getElementById("display-nickname").innerText = username;
+            document.getElementById("capture-title").innerText = `${username}'in İlk 11'i`;
             document.getElementById("login-screen").style.display = "none";
             document.getElementById("game-container").style.display = "block";
+            
             renderPitch();
         }
 
@@ -820,12 +305,14 @@
                 rowArr.forEach(pos => {
                     const slotId = `slot-${slotIndex}`;
                     const data = todayGrid[slotId];
+                    const kriterText = kriterler[data.criteriaKey].text;
+                    
                     rowDiv.innerHTML += `
                         <div class="slot-container" id="${slotId}-container">
                             <div class="slot" id="${slotId}-btn" onclick="openSearch('${slotId}')">+</div>
                             <div class="pos-badge">${data.pos}</div>
                             <div class="player-name" id="${slotId}-name"></div>
-                            <div class="criteria">${data.criteriaText}</div>
+                            <div class="criteria">${kriterText}</div>
                         </div>
                     `;
                     slotIndex++;
@@ -837,7 +324,7 @@
         function openSearch(slotId) {
             if (document.getElementById(`${slotId}-btn`).classList.contains("filled")) return;
             activeSlotId = slotId;
-            document.getElementById("search-pos-title").innerText = todayGrid[slotId].pos + " ARANIYOR";
+            document.getElementById("search-pos-title").innerText = todayGrid[slotId].pos + " Aranıyor";
             const input = document.getElementById("searchInput");
             input.value = "";
             input.classList.remove("error");
@@ -846,9 +333,7 @@
             setTimeout(() => input.focus(), 10);
         }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = "none";
-        }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = "none"; }
 
         document.getElementById("searchInput").addEventListener("input", function(e) {
             const val = normalizeMetin(e.target.value);
@@ -856,14 +341,14 @@
             resultsBox.innerHTML = "";
             this.classList.remove("error");
 
-            if (val.length < 2) return;
+            if (val.length < 3) return;
 
-            const filtered = dbPlayers.filter(p => normalizeMetin(p.name).includes(val));
-
-            filtered.slice(0, 15).forEach(player => {
+            const filtered = dbPlayers.filter(p => p.name && normalizeMetin(p.name).includes(val)).slice(0, 15);
+            filtered.forEach(player => {
                 const div = document.createElement("div");
                 div.className = "player-item";
-                div.innerHTML = `<img src="${player.img}" onerror="this.onerror=null; this.src='https://cdn.sofifa.net/players/notfound_0_120.png'"> ${player.name}`;
+                const imgUrl = player.img || "https://cdn.sofifa.net/players/notfound_0_120.png";
+                div.innerHTML = `<img src="${imgUrl}"> ${player.name}`;
                 div.onclick = () => attemptPlacePlayer(player);
                 resultsBox.appendChild(div);
             });
@@ -873,14 +358,15 @@
             score++;
             document.getElementById("scoreVal").innerText = score;
             
-            const reqTrait = todayGrid[activeSlotId].reqTrait;
-            const inputField = document.getElementById("searchInput");
-
-            if (player.traits.includes(reqTrait) || reqTrait === "herkes") {
+            const reqKey = todayGrid[activeSlotId].criteriaKey;
+            const kurallarSaglandi = kriterler[reqKey].check(player);
+            
+            if (kurallarSaglandi) {
                 const slotBtn = document.getElementById(`${activeSlotId}-btn`);
                 const nameLabel = document.getElementById(`${activeSlotId}-name`);
+                const imgUrl = player.img || "https://cdn.sofifa.net/players/notfound_0_120.png";
                 
-                slotBtn.style.backgroundImage = `url('${player.img}'), url('https://cdn.sofifa.net/players/notfound_0_120.png')`;
+                slotBtn.style.backgroundImage = `url(${imgUrl})`;
                 slotBtn.classList.add("filled");
                 slotBtn.innerHTML = "";
                 nameLabel.innerText = player.name;
@@ -890,39 +376,36 @@
                 closeModal('search-modal');
 
                 if (filledCount === 11) {
-                    setTimeout(() => {
-                        document.getElementById("final-share-btn").style.display = "block";
-                        window.scrollTo(0, document.body.scrollHeight);
-                    }, 500);
+                    setTimeout(() => { document.getElementById("final-share-btn").style.display = "block"; window.scrollTo(0, document.body.scrollHeight); }, 500);
                 }
             } else {
+                const inputField = document.getElementById("searchInput");
                 inputField.classList.remove("error");
                 void inputField.offsetWidth; 
                 inputField.classList.add("error");
             }
         }
 
-        function showShareScreen() {
-            const flash = document.getElementById("flash-effect");
-            flash.classList.add("flash-active");
-            setTimeout(() => flash.classList.remove("flash-active"), 80);
-
-            document.getElementById("ss-title").innerText = `${username}'in Kadrosu`;
-            document.getElementById("ss-score").innerText = `Skor: ${score}`;
-            document.getElementById("ss-pitch-container").innerHTML = document.getElementById("pitch").innerHTML;
-            
-            document.getElementById("result-modal").style.display = "flex";
-        }
-
-        function shareOrDownload() {
-            const card = document.getElementById("ss-card");
-            html2canvas(card, { backgroundColor: "#020604", scale: 2 }).then(canvas => {
-                const imgData = canvas.toDataURL("image/jpeg", 0.9);
-                const link = document.createElement('a');
-                link.download = `Grid11_${username}_Skor${score}.jpg`;
-                link.href = imgData;
-                link.click();
+        function generateShareImage() {
+            const captureArea = document.getElementById("capture-area");
+            const shareBtn = document.getElementById("final-share-btn");
+            shareBtn.innerText = "YÜKLENİYOR...";
+            html2canvas(captureArea, { backgroundColor: "#0a1f12", scale: 2, useCORS: true }).then(canvas => {
+                generatedImageData = canvas.toDataURL("image/jpeg", 0.9);
+                document.getElementById("generated-image-preview").src = generatedImageData;
+                document.getElementById("result-modal").style.display = "flex";
+                shareBtn.innerText = "PAYLAŞ";
             });
+        }
+        
+        function downloadImage() { const link = document.createElement('a'); link.download = `Grid11_${username}_Skor${score}.jpg`; link.href = generatedImageData; link.click(); }
+        
+        async function shareToApps() {
+            if (!navigator.share) return alert("Tarayıcın desteklemiyor. 'Resmi İndir' butonunu kullan.");
+            try {
+                const blob = await (await fetch(generatedImageData)).blob();
+                await navigator.share({ title: 'Grid 11 Kadrom', text: `Bugünkü Grid 11'i ${score} skorla bitirdim!`, files: [new File([blob], 'grid11.jpg', { type: 'image/jpeg' })] });
+            } catch (error) {}
         }
     </script>
 </body>
