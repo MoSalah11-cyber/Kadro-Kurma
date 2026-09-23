@@ -6,6 +6,7 @@
     <title>Günün Gridi - Efsaneler Modu</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&family=VT323&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         body {
             font-family: 'VT323', monospace; 
@@ -414,56 +415,57 @@
             }
         }
 
-        // HIZLI VE MANUEL CSV SATIR PARÇALAYICI
-        const parseRow = (str) => {
-            let arr = [], quote = false, val = '';
-            for (let i = 0; i < str.length; i++) {
-                let cc = str[i];
-                if (cc === '"') quote = !quote;
-                else if (cc === ',' && !quote) { arr.push(val.trim().replace(/^"|"$/g, '')); val = ''; }
-                else val += cc;
-            }
-            arr.push(val.trim().replace(/^"|"$/g, ''));
-            return arr;
-        };
-
-        // DONDURMAYAN, GÜVENLİ CUSTOM CSV YÜKLEYİCİ
-        async function fetchAndProcessCSV(filename, msgPrefix, processFn) {
-            const msgEl = document.getElementById("loading-msg");
-            msgEl.innerText = `${msgPrefix} (İndiriliyor...)`;
-            
-            const response = await fetch('./' + filename + '?v=' + new Date().getTime());
-            if (!response.ok) throw new Error(`Dosya bulunamadı (HTTP ${response.status})`);
-            
-            const text = await response.text();
-            
-            // 404 HTML KONTROLÜ (GitHub Pages koruması)
-            if (text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().startsWith('<html')) {
-                throw new Error("404 HTML sayfası döndü, dosya eksik!");
-            }
-
-            msgEl.innerText = `${msgPrefix} (İşleniyor...)`;
-            await new Promise(r => setTimeout(r, 50)); // Tarayıcıya nefes aldır
-
-            const lines = text.split('\n');
-            const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/['"]/g, ''));
-            
-            let processed = 0;
-            // 15.000 satırlık paketler halinde işleyip telefonu dondurmasını engelliyoruz
-            for (let i = 1; i < lines.length; i += 15000) {
-                let batch = lines.slice(i, i + 15000);
-                
-                for(let line of batch) {
-                    if(!line || line.trim() === "") continue;
-                    let cols = parseRow(line);
-                    let rowObj = {};
-                    headers.forEach((h, idx) => rowObj[h] = cols[idx]);
-                    processFn(rowObj);
+        // ZIRHLI SÜTUN BULUCU (Görünmez karakterleri ve isim farklarını yok eder)
+        function findData(row, keywords) {
+            for (let key in row) {
+                if(!key) continue;
+                let cleanKey = key.replace(/^\uFEFF/, '').trim().toLowerCase();
+                if (keywords.includes(cleanKey)) {
+                    if (row[key] !== undefined && row[key] !== null && row[key] !== "") {
+                        return String(row[key]).trim();
+                    }
                 }
-                processed += batch.length;
-                msgEl.innerText = `${msgPrefix} (${processed.toLocaleString('tr-TR')} satır)`;
-                await new Promise(r => setTimeout(r, 0)); // Arayüzü güncelle ve bekle
             }
+            return "";
+        }
+
+        // ÇÖKMEYEN VE BOM KORUMALI CSV OKUMA SİSTEMİ
+        function loadCSV(fileName, msgPrefix, processRowFunc) {
+            return new Promise((resolve, reject) => {
+                const msgEl = document.getElementById("loading-msg");
+                let rowCount = 0;
+                let is404 = false;
+
+                Papa.parse('./' + fileName + '?v=' + new Date().getTime(), {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    worker: false, // CORS koruması
+                    chunk: function(results, parser) {
+                        if (results.meta && results.meta.fields) {
+                            let isHtml = results.meta.fields.some(f => String(f).toLowerCase().includes('<html') || String(f).toLowerCase().includes('<!doctype'));
+                            if (isHtml) {
+                                is404 = true;
+                                parser.abort();
+                                return;
+                            }
+                        }
+                        rowCount += results.data.length;
+                        msgEl.innerText = `${msgPrefix} (${rowCount.toLocaleString('tr-TR')} satır)`;
+                        
+                        for(let i=0; i<results.data.length; i++) {
+                            processRowFunc(results.data[i]);
+                        }
+                    },
+                    complete: function() {
+                        if (is404) reject(`Hata: ${fileName} dosyası eksik veya 404 HTML döndü!`);
+                        else resolve();
+                    },
+                    error: function(err) {
+                        reject(err.message);
+                    }
+                });
+            });
         }
 
         async function loadLargeDatabase() {
@@ -473,42 +475,52 @@
             const startBtn = document.getElementById("start-btn");
 
             try {
-                // ADIM 1: APPEARANCES (Maç istatistikleri ve kulüpler)
-                await fetchAndProcessCSV('appearances.csv', 'Maçlar Okunuyor', (row) => {
-                    let pid = row.player_id;
+                // ADIM 1: APPEARANCES
+                await loadCSV('appearances.csv', 'Maç Geçmişi Okunuyor...', (row) => {
+                    let pid = findData(row, ['player_id', 'id']);
                     if (!pid) return;
+                    
                     if (!statsMap[pid]) {
                         statsMap[pid] = { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
                     }
                     let p = statsMap[pid];
                     p.appsCount++;
-                    if (row.goals) p.goals += parseInt(row.goals);
-                    if (row.red_cards) p.redCards += parseInt(row.red_cards);
-                    if (row.player_club_id) {
-                        p.clubs.add(row.player_club_id);
-                        p.clubApps[row.player_club_id] = (p.clubApps[row.player_club_id] || 0) + 1;
+                    
+                    let g = findData(row, ['goals', 'goal']);
+                    let r = findData(row, ['red_cards', 'red']);
+                    if (g) p.goals += parseInt(g);
+                    if (r) p.redCards += parseInt(r);
+                    
+                    let clubId = findData(row, ['player_club_id', 'club_id', 'current_club_id']);
+                    if (clubId) {
+                        p.clubs.add(clubId);
+                        p.clubApps[clubId] = (p.clubApps[clubId] || 0) + 1;
                     }
-                    if (row.competition_id) p.comps.add(row.competition_id.toUpperCase());
+                    
+                    let compId = findData(row, ['competition_id', 'comp']);
+                    if (compId) p.comps.add(compId.toUpperCase());
                 });
 
-                // ADIM 2: PLAYERS (Ana oyuncu verileri)
-                await fetchAndProcessCSV('players.csv', 'Oyuncular Harmanlanıyor', (row) => {
-                    let pName = row.name || row.player_name || "";
+                // ADIM 2: PLAYERS
+                await loadCSV('players.csv', 'Efsaneler Harmanlanıyor...', (row) => {
+                    let pName = findData(row, ['name', 'player_name', 'pretty_name']);
                     if (pName.length < 2) return;
                     
-                    let pid = row.player_id;
-                    let pNat = (row.country_of_citizenship || "").toLowerCase();
-                    let pFoot = (row.foot || "").toLowerCase();
-                    let height = parseInt(row.height_in_cm || 0);
-                    let birthYear = row.date_of_birth && row.date_of_birth.length >= 4 ? parseInt(row.date_of_birth.substring(0, 4)) : 0;
+                    let pid = findData(row, ['player_id', 'id']);
+                    let pNat = findData(row, ['country_of_citizenship', 'nationality']).toLowerCase();
+                    let pFoot = findData(row, ['foot', 'preferred_foot']).toLowerCase();
+                    let height = parseInt(findData(row, ['height_in_cm', 'height']) || "0");
                     
-                    let pImg = row.image_url;
+                    let dobRaw = findData(row, ['date_of_birth', 'dob']);
+                    let birthYear = dobRaw && dobRaw.length >= 4 ? parseInt(dobRaw.substring(0, 4)) : 0;
+                    
+                    let pImg = findData(row, ['image_url', 'url', 'photo']);
                     if (!pImg || pImg.length < 5) pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
                     if (pImg.includes('transfermarkt')) pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
 
                     let pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
                     let c = pStats.clubs;
-                    let teamsCount = c.size; // Takım sayısını formalardan alıyoruz
+                    let teamsCount = c.size;
 
                     const traits = ["herkes"];
                     
@@ -597,7 +609,7 @@
                 msgEl.innerText = "⚠ DOSYALAR OKUNAMADI";
                 msgEl.parentElement.style.color = "#e74c3c";
                 errEl.style.display = "block";
-                errEl.innerHTML = err.message + `<br>GitHub deponda tam olarak <b>players.csv</b> ve <b>appearances.csv</b> olduğuna emin ol.`;
+                errEl.innerHTML = err + `<br>Lütfen GitHub deponda <b>players.csv</b> ve <b>appearances.csv</b> olduğuna emin ol.`;
             }
         }
 
