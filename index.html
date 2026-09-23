@@ -353,7 +353,7 @@
         <button class="play-btn" id="start-btn" onclick="startGame()" disabled>OYNA</button>
         <div id="db-status">
             <div style="display:flex; align-items:center; gap:10px;">
-                <span id="loading-msg">Veriler Yükleniyor...</span>
+                <span id="loading-msg">Sistem Başlatılıyor...</span>
                 <div class="spinner" id="loading-spinner"></div>
             </div>
             <div id="error-msg" style="color: #e74c3c; font-size: 14px; margin-top:10px; display:none;"></div>
@@ -404,11 +404,8 @@
         let dailyFormationLayout = [];
         let todayGrid = {};
         let dbPlayers = []; 
-
         const statsMap = {}; 
-        const transMap = new Map();
 
-        // RASTGELE TOHUM (GÜNLÜK SABİT)
         function mulberry32(a) {
             return function() {
               var t = a += 0x6D2B79F5;
@@ -418,7 +415,7 @@
             }
         }
 
-        // CANLI SAYAÇLI VE ÇÖKMEYEN YENİ CSV OKUYUCU (WORKER YOK)
+        // ZIRHLI VE ÇÖKMEYEN CSV OKUMA SİSTEMİ
         function loadCSV(fileName, msgPrefix, processChunkFunc) {
             return new Promise((resolve, reject) => {
                 const msgEl = document.getElementById("loading-msg");
@@ -429,17 +426,23 @@
                     download: true,
                     header: true,
                     skipEmptyLines: true,
+                    worker: true, 
                     chunk: function(results, parser) {
-                        // GitHub 404 hatasını HTML olarak verirse hemen yakala ve işlemi iptal et
-                        if (results.meta.fields && results.meta.fields.some(f => f.includes('<html') || f.includes('<!DOCTYPE'))) {
-                            is404 = true;
-                            parser.abort();
-                            return reject(`Hata: ${fileName} dosyası bulunamadı (404)!`);
+                        try {
+                            if (results.meta && results.meta.fields) {
+                                let isHtml = results.meta.fields.some(f => String(f).toLowerCase().includes('<html') || String(f).toLowerCase().includes('<!doctype'));
+                                if (isHtml) {
+                                    is404 = true;
+                                    parser.abort();
+                                    return reject(`Hata: ${fileName} dosyası eksik veya GitHub'da bulunamadı (404)!`);
+                                }
+                            }
+                            rowCount += results.data.length;
+                            msgEl.innerText = `${msgPrefix} (${rowCount.toLocaleString('tr-TR')} satır)`;
+                            processChunkFunc(results.data);
+                        } catch (e) {
+                            console.error("Chunk Error:", e);
                         }
-                        
-                        rowCount += results.data.length;
-                        msgEl.innerText = `${msgPrefix} (${rowCount.toLocaleString('tr-TR')} satır)`;
-                        processChunkFunc(results.data);
                     },
                     complete: function() {
                         if (!is404) resolve();
@@ -458,8 +461,8 @@
             const startBtn = document.getElementById("start-btn");
 
             try {
-                // 1. APPEARANCES
-                await loadCSV('appearances.csv', 'İstatistikler Okunuyor...', (data) => {
+                // ADIM 1: APPEARANCES (Takımları ve maçları buradan buluyoruz, transfers.csv çöpe atıldı)
+                await loadCSV('appearances.csv', 'Maç Geçmişi Okunuyor...', (data) => {
                     for (let i = 0; i < data.length; i++) {
                         let row = data[i];
                         let pid = row.player_id;
@@ -479,19 +482,7 @@
                     }
                 });
 
-                // 2. TRANSFERS
-                await loadCSV('transfers.csv', 'Transfer Geçmişi...', (data) => {
-                    for (let i = 0; i < data.length; i++) {
-                        let row = data[i];
-                        let pid = row.player_id;
-                        if (!pid) continue;
-                        if (!transMap.has(pid)) transMap.set(pid, new Set());
-                        if (row.from_club_id) transMap.get(pid).add(row.from_club_id);
-                        if (row.to_club_id) transMap.get(pid).add(row.to_club_id);
-                    }
-                });
-
-                // 3. PLAYERS
+                // ADIM 2: PLAYERS (Ana kimlik kartları)
                 await loadCSV('players.csv', 'Efsaneler Harmanlanıyor...', (data) => {
                     for (let i = 0; i < data.length; i++) {
                         let row = data[i];
@@ -510,7 +501,7 @@
 
                         let pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
                         let c = pStats.clubs;
-                        let teamsCount = transMap.has(pid) ? transMap.get(pid).size : c.size;
+                        let teamsCount = c.size; // Takım sayısını doğrudan formalardan buluyoruz
 
                         const traits = ["herkes"];
                         
@@ -555,7 +546,7 @@
                         if (ulkeSayisi >= 4) traits.push("ulke_4_farkli");
                         if (teamsCount >= 7) traits.push("takim_7_fazla");
                         if (Object.values(pStats.clubApps).some(v => v >= 200)) traits.push("tek_takim_200_mac");
-                        if (teamsCount === 1 && pStats.appsCount > 50) traits.push("tek_takim_kariyer");
+                        if (teamsCount <= 2 && pStats.appsCount > 50) traits.push("tek_takim_kariyer");
                         if (pStats.appsCount >= 300) traits.push("mac_300");
                         if (pStats.redCards === 0 && pStats.appsCount >= 50) traits.push("sifir_kirmizi");
 
@@ -585,9 +576,7 @@
                     }
                 });
 
-                // RAM'i Temizle
                 for (let prop in statsMap) delete statsMap[prop];
-                transMap.clear();
 
                 msgEl.innerText = `✓ OYUN HAZIR! (${dbPlayers.length.toLocaleString('tr-TR')} Topçu)`;
                 spinner.style.display = "none";
@@ -601,7 +590,7 @@
                 msgEl.innerText = "⚠ DOSYALAR OKUNAMADI";
                 msgEl.parentElement.style.color = "#e74c3c";
                 errEl.style.display = "block";
-                errEl.innerHTML = err + `<br>Lütfen GitHub'daki dosya isimlerinin <b>players.csv</b>, <b>appearances.csv</b> ve <b>transfers.csv</b> olduğuna emin ol.`;
+                errEl.innerHTML = err + `<br>Lütfen GitHub deponda sadece <b>players.csv</b> ve <b>appearances.csv</b> olduğuna emin ol.`;
             }
         }
 
