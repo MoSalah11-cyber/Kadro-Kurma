@@ -353,10 +353,10 @@
         <button class="play-btn" id="start-btn" onclick="startGame()" disabled>OYNA</button>
         <div id="db-status">
             <div style="display:flex; align-items:center; gap:10px;">
-                <span id="loading-msg">Sistem Başlatılıyor...</span>
+                <span id="loading-msg" style="font-family: 'Poppins', sans-serif; font-size:14px;">Motor Isınıyor...</span>
                 <div class="spinner" id="loading-spinner"></div>
             </div>
-            <div id="error-msg" style="color: #e74c3c; font-size: 14px; margin-top:10px; display:none;"></div>
+            <div id="error-msg" style="color: #e74c3c; font-size: 14px; margin-top:10px; display:none; font-family: 'Poppins', sans-serif;"></div>
         </div>
     </div>
 
@@ -376,7 +376,7 @@
                 <span id="search-pos-title">ARANIYOR</span>
                 <span style="cursor: pointer; color:#e74c3c; font-family: 'Poppins', sans-serif;" onclick="closeModal('search-modal')">✖</span>
             </div>
-            <input type="text" id="searchInput" placeholder="Topçu ara..." autocomplete="off">
+            <input type="text" id="searchInput" placeholder="İsim yaz..." autocomplete="off">
             <div class="results" id="resultsList"></div>
         </div>
     </div>
@@ -416,59 +416,48 @@
             }
         }
 
-        // Değer çekici kalkan: Sütun adları ne kadar tuhaf olursa olsun yakalar
-        function getVal(row, possibleKeys) {
+        // ESNEK DEĞER BULUCU KORUMA KALKANI
+        function getV(row, possibleKeys) {
+            if (!row) return "";
             for (let k of possibleKeys) {
-                if (row[k] !== undefined && row[k] !== "") return String(row[k]).trim();
+                if (row[k] !== undefined && row[k] !== null && row[k] !== "") return String(row[k]).trim();
+            }
+            for (let rowKey in row) {
+                let lowerRK = String(rowKey).toLowerCase();
+                for (let k of possibleKeys) {
+                    if (lowerRK.includes(k) && row[rowKey]) return String(row[rowKey]).trim();
+                }
             }
             return "";
         }
 
-        // ÇÖKMEYEN, DONDURMAYAN, BOM KORUMALI ANA YÜKLEYİCİ
-        function loadCSV(fileName, msgPrefix, processRowFunc) {
-            return new Promise((resolve, reject) => {
-                const msgEl = document.getElementById("loading-msg");
-                let rowCount = 0;
-                let is404 = false;
+        // ZIRHLI DOĞRUDAN METİN İNDİRİCİ (Asla arka planda sessizce çökmez)
+        async function fetchAndProcessDirectly(fileName, msgPrefix, rowProcessor) {
+            const msgEl = document.getElementById("loading-msg");
+            
+            msgEl.innerText = `${msgPrefix} (Dosya çekiliyor...)`;
+            const response = await fetch('./' + fileName + '?v=' + Date.now());
+            if (!response.ok) throw new Error(`${fileName} sunucuda bulunamadı! (HTTP ${response.status})`);
+            
+            let text = await response.text();
+            if (text.toLowerCase().includes('<!doctype') || text.toLowerCase().includes('<html')) {
+                throw new Error(`GitHub 404 Hatası! ${fileName} adlı dosya deponda yok.`);
+            }
 
-                Papa.parse('./' + fileName + '?v=' + new Date().getTime(), {
-                    download: true,
-                    header: true,
-                    skipEmptyLines: true,
-                    worker: false, 
-                    chunkSize: 1024 * 1024, 
-                    chunk: function(results, parser) {
-                        if (results.meta && results.meta.fields) {
-                            let isHtml = results.meta.fields.some(f => String(f).toLowerCase().includes('<html') || String(f).toLowerCase().includes('<!doctype'));
-                            if (isHtml) {
-                                is404 = true;
-                                parser.abort();
-                                return;
-                            }
-                        }
-                        
-                        rowCount += results.data.length;
-                        msgEl.innerText = `${msgPrefix} (${rowCount.toLocaleString('tr-TR')} satır)`;
-                        
-                        for(let i=0; i<results.data.length; i++) {
-                            let rawRow = results.data[i];
-                            let cleanRow = {};
-                            // Satırbaşındaki görünmez karakterleri siler, hata bırakmaz
-                            for(let key in rawRow) {
-                                let cleanKey = key.replace(/^\uFEFF/, '').trim().toLowerCase();
-                                cleanRow[cleanKey] = rawRow[key];
-                            }
-                            processRowFunc(cleanRow);
-                        }
-                    },
-                    complete: function() {
-                        if (is404) reject(`Hata: ${fileName} bozuk veya bulunamadı (HTML 404 Döndü)`);
-                        else resolve();
-                    },
-                    error: function(err) {
-                        reject(err.message);
-                    }
-                });
+            // Görünmez karakterleri (BOM) tamamen temizle
+            text = text.replace(/^\uFEFF/, '');
+            
+            msgEl.innerText = `${msgPrefix} (İşleniyor, ekran 3 saniye donabilir...)`;
+            // Arayüzün güncellenmesi için nefes payı
+            await new Promise(r => setTimeout(r, 100));
+
+            // PapaParse'ı en güvenli ve hızlı senkron modda çalıştırıyoruz
+            Papa.parse(text, {
+                header: true,
+                skipEmptyLines: true,
+                step: function(results) {
+                    if(results.data) rowProcessor(results.data);
+                }
             });
         }
 
@@ -479,9 +468,9 @@
             const startBtn = document.getElementById("start-btn");
 
             try {
-                // ADIM 1: APPEARANCES 
-                await loadCSV('appearances.csv', 'Maçlar Okunuyor', (row) => {
-                    let pid = getVal(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
+                // ADIM 1: MAÇLAR
+                await fetchAndProcessDirectly('appearances.csv', 'Maçlar', (row) => {
+                    let pid = getV(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if (!pid) return;
                     
                     if (!statsMap[pid]) {
@@ -490,50 +479,56 @@
                     let p = statsMap[pid];
                     p.appsCount++;
                     
-                    let g = getVal(row, ['goals', 'goal']);
-                    let r = getVal(row, ['red_cards', 'red']);
+                    let g = getV(row, ['goals', 'goal']);
+                    let r = getV(row, ['red_cards', 'red']);
                     if (g) p.goals += parseInt(g);
                     if (r) p.redCards += parseInt(r);
                     
-                    let clubId = getVal(row, ['player_club_id', 'club_id']).replace(/[^0-9]/g, '');
+                    let clubId = getV(row, ['player_club_id', 'club_id']).replace(/[^0-9]/g, '');
                     if (clubId) {
                         p.clubs.add(clubId);
                         p.clubApps[clubId] = (p.clubApps[clubId] || 0) + 1;
                     }
                     
-                    let compId = getVal(row, ['competition_id', 'comp']);
+                    let compId = getV(row, ['competition_id', 'comp']);
                     if (compId) p.comps.add(compId.toUpperCase());
                 });
 
-                // ADIM 2: TRANSFERS (Senin özel dosyan!)
-                await loadCSV('transfers.csv', 'Transfer Geçmişi', (row) => {
-                    let pid = getVal(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
+                // ADIM 2: TRANSFERLER
+                await fetchAndProcessDirectly('transfers.csv', 'Transferler', (row) => {
+                    let pid = getV(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if (!pid) return;
                     if (!transMap.has(pid)) transMap.set(pid, new Set());
                     
-                    let fromC = getVal(row, ['from_club_id', 'from_club']).replace(/[^0-9]/g, '');
-                    let toC = getVal(row, ['to_club_id', 'to_club']).replace(/[^0-9]/g, '');
+                    let fromC = getV(row, ['from_club_id', 'from_club']).replace(/[^0-9]/g, '');
+                    let toC = getV(row, ['to_club_id', 'to_club']).replace(/[^0-9]/g, '');
                     
                     if(fromC) transMap.get(pid).add(fromC);
                     if(toC) transMap.get(pid).add(toC);
                 });
 
-                // ADIM 3: PLAYERS
-                await loadCSV('players.csv', 'Oyuncular Harmanlanıyor', (row) => {
-                    let pName = getVal(row, ['name', 'player_name', 'pretty_name']); 
-                    if (pName.length < 2) return;
+                // ADIM 3: EFSANELER
+                await fetchAndProcessDirectly('players.csv', 'Son Rötuşlar', (row) => {
+                    let pName = getV(row, ['name', 'player_name', 'pretty_name']);
+                    // Bazen Kaggle dosyalarında isim ikiye bölünür, bu ihtimali de ekledik
+                    if (!pName || pName.length < 2) {
+                        let fn = getV(row, ['first_name']);
+                        let ln = getV(row, ['last_name']);
+                        pName = (fn + " " + ln).trim();
+                    }
+                    if (!pName || pName.length < 2) return;
                     
-                    let pid = getVal(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
+                    let pid = getV(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if(!pid) return;
 
-                    let pNat = getVal(row, ['country_of_citizenship', 'nationality']).toLowerCase();
-                    let pFoot = getVal(row, ['foot', 'preferred_foot']).toLowerCase();
-                    let height = parseInt(getVal(row, ['height_in_cm', 'height']) || "0");
+                    let pNat = getV(row, ['country_of_citizenship', 'nationality']).toLowerCase();
+                    let pFoot = getV(row, ['foot', 'preferred_foot']).toLowerCase();
+                    let height = parseInt(getV(row, ['height_in_cm', 'height']) || "0");
                     
-                    let dobRaw = getVal(row, ['date_of_birth', 'dob']);
+                    let dobRaw = getV(row, ['date_of_birth', 'dob']);
                     let birthYear = dobRaw && dobRaw.length >= 4 ? parseInt(dobRaw.substring(0, 4)) : 0;
                     
-                    let pImg = getVal(row, ['image_url', 'url', 'photo']);
+                    let pImg = getV(row, ['image_url', 'url', 'photo']);
                     if (!pImg || pImg.length < 5) pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
                     if (pImg.includes('transfermarkt')) pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
 
@@ -545,13 +540,13 @@
 
                     const traits = ["herkes"];
                     
-                    if(pNat.includes("turkey") || pNat.includes("türkiye")) traits.push("turkiye");
+                    if(pNat.includes("turkey") || pNat.includes("türkiye") || pNat.includes("türk")) traits.push("turkiye");
                     if(pNat.includes("brazil")) traits.push("brezilya");
                     if(pNat.includes("argentina")) traits.push("arjantin");
-                    if(pNat.includes("germany")) traits.push("almanya");
+                    if(pNat.includes("germany") || pNat.includes("alman")) traits.push("almanya");
                     if(pNat.includes("england")) traits.push("ingiltere");
                     if(pNat.includes("spain")) traits.push("ispanya");
-                    if(pNat.includes("france")) traits.push("fransa");
+                    if(pNat.includes("france") || pNat.includes("frans")) traits.push("fransa");
                     if(pNat.includes("italy")) traits.push("italya");
                     if(pNat.includes("netherlands") || pNat.includes("holland")) traits.push("hollanda");
 
@@ -594,9 +589,9 @@
 
                     if (isSuperLig) {
                         if (pNat.includes('brazil')) traits.push("tr_brezilyali");
-                        if (pNat.includes('germany')) traits.push("tr_alman");
-                        if (pNat.includes('italy')) traits.push("tr_italyan");
-                        if (pNat.includes('nigeria')) traits.push("tr_nijeryali");
+                        if (pNat.includes('germany') || pNat.includes('alman')) traits.push("tr_alman");
+                        if (pNat.includes('italy') || pNat.includes('italyan')) traits.push("tr_italyan");
+                        if (pNat.includes('nigeria') || pNat.includes('nijer')) traits.push("tr_nijeryali");
                         if (pNat.includes('uruguay')) traits.push("tr_uruguayli");
                         
                         if (!c.has('141') && !c.has('36') && !c.has('114') && !c.has('449')) {
@@ -604,9 +599,9 @@
                         }
                     }
 
-                    if (c.has('31') && pNat.includes('italy')) traits.push("liv_italyan");
-                    if (c.has('46') && pNat.includes('germany')) traits.push("inter_alman");
-                    if (c.has('131') && pNat.includes('france')) traits.push("barca_fransiz");
+                    if (c.has('31') && (pNat.includes('italy') || pNat.includes('italyan'))) traits.push("liv_italyan");
+                    if (c.has('46') && (pNat.includes('germany') || pNat.includes('alman'))) traits.push("inter_alman");
+                    if (c.has('131') && (pNat.includes('france') || pNat.includes('frans'))) traits.push("barca_fransiz");
 
                     if (pStats.goals >= 20) traits.push("gol_20_defans");
                     if (pStats.goals >= 100) traits.push("gol_100_hucum");
@@ -619,7 +614,9 @@
                 for (let prop in statsMap) delete statsMap[prop];
                 transMap.clear();
 
-                msgEl.innerText = `✓ OYUN HAZIR! (${dbPlayers.length.toLocaleString('tr-TR')} Topçu)`;
+                if(dbPlayers.length === 0) throw new Error("Dosyalar indi ama içinden hiç veri çıkmadı. Dosya yapısı bozuk olabilir.");
+
+                msgEl.innerText = `✓ SİSTEM AKTİF! (${dbPlayers.length.toLocaleString('tr-TR')} Kişi)`;
                 spinner.style.display = "none";
                 msgEl.parentElement.style.color = "#2ecc71";
                 startBtn.disabled = false;
@@ -628,10 +625,10 @@
             } catch (err) {
                 console.error(err);
                 spinner.style.display = "none";
-                msgEl.innerText = "⚠ DOSYALAR OKUNAMADI";
+                msgEl.innerText = "⚠ BİR HATA OLUŞTU";
                 msgEl.parentElement.style.color = "#e74c3c";
                 errEl.style.display = "block";
-                errEl.innerHTML = err;
+                errEl.innerHTML = err.message;
             }
         }
 
