@@ -6,6 +6,7 @@
     <title>Günün Gridi - Efsaneler Modu</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&family=VT323&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         body {
             font-family: 'VT323', monospace; 
@@ -415,72 +416,60 @@
             }
         }
 
-        // COLAB'IN KİRLETTİĞİ VERİLERİ MANUEL PARÇALAYAN ZIRHLI SİSTEM
-        function parseRow(str, delimiter = ',') {
-            let arr = [], quote = false, val = '';
-            for (let i = 0; i < str.length; i++) {
-                let cc = str[i];
-                if (cc === '"') quote = !quote;
-                else if (cc === delimiter && !quote) { arr.push(val.trim().replace(/^"|"$/g, '')); val = ''; }
-                else val += cc;
-            }
-            arr.push(val.trim().replace(/^"|"$/g, ''));
-            return arr;
-        }
-
-        // ESNEK SÜTUN BULUCU (İsimler ne kadar bozuk olursa olsun bulur)
+        // Değer çekici kalkan: Sütun adları ne kadar tuhaf olursa olsun yakalar
         function getVal(row, possibleKeys) {
             for (let k of possibleKeys) {
-                if (row[k] !== undefined && row[k] !== "") return row[k];
-            }
-            for (let rowKey in row) {
-                for (let k of possibleKeys) {
-                    if (rowKey.includes(k) && row[rowKey]) return row[rowKey];
-                }
+                if (row[k] !== undefined && row[k] !== "") return String(row[k]).trim();
             }
             return "";
         }
 
-        // DONDURMAYAN, PAPAPARSE'SİZ, 404 KORUMALI ÖZEL CSV OKUYUCU
-        async function fetchAndProcessCSV(filename, msgPrefix, processFn) {
-            const msgEl = document.getElementById("loading-msg");
-            msgEl.innerText = `${msgPrefix} (İndiriliyor...)`;
+        // ÇÖKMEYEN, DONDURMAYAN, BOM KORUMALI ANA YÜKLEYİCİ
+        function loadCSV(fileName, msgPrefix, processRowFunc) {
+            return new Promise((resolve, reject) => {
+                const msgEl = document.getElementById("loading-msg");
+                let rowCount = 0;
+                let is404 = false;
 
-            const response = await fetch('./' + filename + '?v=' + new Date().getTime());
-            if (!response.ok) throw new Error(`${filename} HTTP ${response.status} hatası verdi`);
-            
-            const text = await response.text();
-            if (text.toLowerCase().includes('<!doctype') || text.toLowerCase().includes('<html')) {
-                throw new Error(`${filename} dosyası GitHub'da bulunamadı (404)`);
-            }
-
-            msgEl.innerText = `${msgPrefix} (İşleniyor...)`;
-            await new Promise(r => setTimeout(r, 50));
-
-            const lines = text.split(/\r?\n/);
-            if (lines.length < 2) return;
-
-            const delimiter = lines[0].includes(';') && !lines[0].includes(',') ? ';' : ',';
-            const headers = parseRow(lines[0], delimiter).map(h => h.replace(/^\uFEFF/, '').trim().toLowerCase());
-
-            let processed = 0;
-            const CHUNK_SIZE = 5000;
-            
-            for (let i = 1; i < lines.length; i += CHUNK_SIZE) {
-                let batch = lines.slice(i, i + CHUNK_SIZE);
-                for (let line of batch) {
-                    if (!line || line.trim() === "") continue;
-                    let cols = parseRow(line, delimiter);
-                    let rowObj = {};
-                    for (let j = 0; j < headers.length; j++) {
-                        rowObj[headers[j]] = cols[j] || "";
+                Papa.parse('./' + fileName + '?v=' + new Date().getTime(), {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    worker: false, 
+                    chunkSize: 1024 * 1024, 
+                    chunk: function(results, parser) {
+                        if (results.meta && results.meta.fields) {
+                            let isHtml = results.meta.fields.some(f => String(f).toLowerCase().includes('<html') || String(f).toLowerCase().includes('<!doctype'));
+                            if (isHtml) {
+                                is404 = true;
+                                parser.abort();
+                                return;
+                            }
+                        }
+                        
+                        rowCount += results.data.length;
+                        msgEl.innerText = `${msgPrefix} (${rowCount.toLocaleString('tr-TR')} satır)`;
+                        
+                        for(let i=0; i<results.data.length; i++) {
+                            let rawRow = results.data[i];
+                            let cleanRow = {};
+                            // Satırbaşındaki görünmez karakterleri siler, hata bırakmaz
+                            for(let key in rawRow) {
+                                let cleanKey = key.replace(/^\uFEFF/, '').trim().toLowerCase();
+                                cleanRow[cleanKey] = rawRow[key];
+                            }
+                            processRowFunc(cleanRow);
+                        }
+                    },
+                    complete: function() {
+                        if (is404) reject(`Hata: ${fileName} bozuk veya bulunamadı (HTML 404 Döndü)`);
+                        else resolve();
+                    },
+                    error: function(err) {
+                        reject(err.message);
                     }
-                    processFn(rowObj);
-                }
-                processed += batch.length;
-                msgEl.innerText = `${msgPrefix} (${processed.toLocaleString('tr-TR')} satır)`;
-                await new Promise(r => setTimeout(r, 0));
-            }
+                });
+            });
         }
 
         async function loadLargeDatabase() {
@@ -490,8 +479,8 @@
             const startBtn = document.getElementById("start-btn");
 
             try {
-                // ADIM 1: APPEARANCES
-                await fetchAndProcessCSV('appearances.csv', 'Maçlar Okunuyor', (row) => {
+                // ADIM 1: APPEARANCES 
+                await loadCSV('appearances.csv', 'Maçlar Okunuyor', (row) => {
                     let pid = getVal(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if (!pid) return;
                     
@@ -506,7 +495,7 @@
                     if (g) p.goals += parseInt(g);
                     if (r) p.redCards += parseInt(r);
                     
-                    let clubId = getVal(row, ['player_club_id', 'club_id', 'current_club_id']).replace(/[^0-9]/g, '');
+                    let clubId = getVal(row, ['player_club_id', 'club_id']).replace(/[^0-9]/g, '');
                     if (clubId) {
                         p.clubs.add(clubId);
                         p.clubApps[clubId] = (p.clubApps[clubId] || 0) + 1;
@@ -516,8 +505,8 @@
                     if (compId) p.comps.add(compId.toUpperCase());
                 });
 
-                // ADIM 2: TRANSFERS (SENİN KÜÇÜLTTÜĞÜN O DOSYA GERİ GELDİ!)
-                await fetchAndProcessCSV('transfers.csv', 'Transfer Geçmişi', (row) => {
+                // ADIM 2: TRANSFERS (Senin özel dosyan!)
+                await loadCSV('transfers.csv', 'Transfer Geçmişi', (row) => {
                     let pid = getVal(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if (!pid) return;
                     if (!transMap.has(pid)) transMap.set(pid, new Set());
@@ -530,8 +519,8 @@
                 });
 
                 // ADIM 3: PLAYERS
-                await fetchAndProcessCSV('players.csv', 'Efsaneler Harmanlanıyor', (row) => {
-                    let pName = getVal(row, ['name', 'player_name', 'pretty_name']);
+                await loadCSV('players.csv', 'Oyuncular Harmanlanıyor', (row) => {
+                    let pName = getVal(row, ['name', 'player_name', 'pretty_name']); 
                     if (pName.length < 2) return;
                     
                     let pid = getVal(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
@@ -642,7 +631,7 @@
                 msgEl.innerText = "⚠ DOSYALAR OKUNAMADI";
                 msgEl.parentElement.style.color = "#e74c3c";
                 errEl.style.display = "block";
-                errEl.innerHTML = err.message;
+                errEl.innerHTML = err;
             }
         }
 
