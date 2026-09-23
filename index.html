@@ -6,7 +6,6 @@
     <title>Günün Gridi - Efsaneler Modu</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&family=VT323&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Milyonluk CSV'leri tarayıcıyı dondurmadan okumak için PapaParse -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         body {
@@ -95,10 +94,10 @@
             color: #f1c40f;
             margin-top: 15px;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             gap: 10px;
+            flex-direction: column;
         }
 
         .spinner {
@@ -406,7 +405,10 @@
         let todayGrid = {};
         let dbPlayers = []; 
 
-        // RASTGELE GÜNLÜK DİZİLİŞ TOHUMU
+        const statsMap = {}; 
+        const transMap = new Map();
+
+        // RASTGELE TOHUM (GÜNLÜK SABİT)
         function mulberry32(a) {
             return function() {
               var t = a += 0x6D2B79F5;
@@ -416,24 +418,6 @@
             }
         }
 
-        // CSV DOSYALARINI DONMADAN OKUMAK İÇİN PAPAPARSE
-        function parseCSV(fileName) {
-            return new Promise((resolve, reject) => {
-                Papa.parse('./' + fileName + '?v=' + new Date().getTime(), {
-                    download: true,
-                    header: true,
-                    skipEmptyLines: true,
-                    worker: true,
-                    complete: function(results) {
-                        resolve(results.data);
-                    },
-                    error: function(err) {
-                        reject(err);
-                    }
-                });
-            });
-        }
-
         async function loadLargeDatabase() {
             const msgEl = document.getElementById("loading-msg");
             const spinner = document.getElementById("loading-spinner");
@@ -441,152 +425,168 @@
             const startBtn = document.getElementById("start-btn");
 
             try {
-                // 1. MAÇ GEÇMİŞİ OKUMA
+                // ADIM 1: APPEARANCES (Parçalı Okuma - Telefonu Dondurmaz)
                 msgEl.innerText = "İstatistikler Yükleniyor... (1/3)";
-                const appsData = await parseCSV('appearances.csv');
-                let statsMap = {};
-                for (let i = 0; i < appsData.length; i++) {
-                    let row = appsData[i];
-                    let pid = row.player_id;
-                    if (!pid) continue;
-                    
-                    if (!statsMap[pid]) {
-                        statsMap[pid] = { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
-                    }
-                    
-                    statsMap[pid].appsCount++;
-                    statsMap[pid].goals += parseInt(row.goals || 0);
-                    statsMap[pid].redCards += parseInt(row.red_cards || 0);
-                    
-                    let cid = row.player_club_id;
-                    if (cid) {
-                        statsMap[pid].clubs.add(cid);
-                        if (!statsMap[pid].clubApps[cid]) statsMap[pid].clubApps[cid] = 0;
-                        statsMap[pid].clubApps[cid]++;
-                    }
-                    
-                    let compId = row.competition_id;
-                    if (compId) {
-                        statsMap[pid].comps.add(compId.toUpperCase());
-                    }
-                }
+                await new Promise((resolve, reject) => {
+                    Papa.parse('appearances.csv', {
+                        download: true,
+                        header: true,
+                        worker: true, 
+                        skipEmptyLines: true,
+                        chunk: function(results) {
+                            results.data.forEach(row => {
+                                let pid = row.player_id;
+                                if (!pid) return;
+                                if (!statsMap[pid]) {
+                                    statsMap[pid] = { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
+                                }
+                                let p = statsMap[pid];
+                                p.appsCount++;
+                                if (row.goals) p.goals += parseInt(row.goals);
+                                if (row.red_cards) p.redCards += parseInt(row.red_cards);
+                                if (row.player_club_id) {
+                                    p.clubs.add(row.player_club_id);
+                                    p.clubApps[row.player_club_id] = (p.clubApps[row.player_club_id] || 0) + 1;
+                                }
+                                if (row.competition_id) p.comps.add(row.competition_id.toUpperCase());
+                            });
+                        },
+                        complete: resolve,
+                        error: reject
+                    });
+                });
 
-                // 2. TRANSFER GEÇMİŞİ OKUMA
-                msgEl.innerText = "Kariyer Geçmişi Yükleniyor... (2/3)";
-                const transData = await parseCSV('transfers.csv');
-                let transMap = new Map();
-                for (let i = 0; i < transData.length; i++) {
-                    let row = transData[i];
-                    let pid = row.player_id;
-                    if (!pid) continue;
-                    
-                    if (!transMap.has(pid)) transMap.set(pid, new Set());
-                    if (row.from_club_id) transMap.get(pid).add(row.from_club_id);
-                    if (row.to_club_id) transMap.get(pid).add(row.to_club_id);
-                }
+                // ADIM 2: TRANSFERS
+                msgEl.innerText = "Transfer Geçmişi Okunuyor... (2/3)";
+                await new Promise((resolve, reject) => {
+                    Papa.parse('transfers.csv', {
+                        download: true,
+                        header: true,
+                        worker: true,
+                        skipEmptyLines: true,
+                        chunk: function(results) {
+                            results.data.forEach(row => {
+                                let pid = row.player_id;
+                                if (!pid) return;
+                                if (!transMap.has(pid)) transMap.set(pid, new Set());
+                                if (row.from_club_id) transMap.get(pid).add(row.from_club_id);
+                                if (row.to_club_id) transMap.get(pid).add(row.to_club_id);
+                            });
+                        },
+                        complete: resolve,
+                        error: reject
+                    });
+                });
 
-                // 3. OYUNCU ANA BİLGİLERİ VE KOMBİNASYON HARMANLAMA
-                msgEl.innerText = "Kadro Harmanlanıyor... (3/3)";
-                const playersData = await parseCSV('players.csv');
-                
-                const loadedPlayers = [];
+                // ADIM 3: PLAYERS VE KOMBİNASYON
+                msgEl.innerText = "Topçular Harmanlanıyor... (3/3)";
+                await new Promise((resolve, reject) => {
+                    Papa.parse('players.csv', {
+                        download: true,
+                        header: true,
+                        worker: true,
+                        skipEmptyLines: true,
+                        chunk: function(results) {
+                            results.data.forEach(row => {
+                                let pName = row.name || row.player_name || "";
+                                if (pName.length < 2) return;
+                                
+                                let pid = row.player_id;
+                                let pNat = (row.country_of_citizenship || "").toLowerCase();
+                                let pFoot = (row.foot || "").toLowerCase();
+                                let height = parseInt(row.height_in_cm || 0);
+                                let birthYear = row.date_of_birth && row.date_of_birth.length >= 4 ? parseInt(row.date_of_birth.substring(0, 4)) : 0;
+                                
+                                let pImg = row.image_url;
+                                if (!pImg || pImg.length < 5) pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
+                                if (pImg.includes('transfermarkt')) pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
 
-                for(let i = 0; i < playersData.length; i++) {
-                    let row = playersData[i];
-                    let pName = row.name || row.player_name || "";
-                    if (pName.length < 2) continue;
+                                let pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
+                                let c = pStats.clubs;
+                                let teamsCount = transMap.has(pid) ? transMap.get(pid).size : c.size;
 
-                    let pid = row.player_id;
-                    let pNat = (row.country_of_citizenship || "").toLowerCase();
-                    let pFoot = (row.foot || "").toLowerCase();
-                    let height = parseInt(row.height_in_cm || 0);
-                    
-                    let birthYear = row.date_of_birth && row.date_of_birth.length >= 4 ? parseInt(row.date_of_birth.substring(0, 4)) : 0;
-                    
-                    let pImg = row.image_url;
-                    if (!pImg || pImg.length < 5) pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
+                                const traits = ["herkes"];
+                                
+                                if(pNat.includes("turkey") || pNat.includes("türkiye")) traits.push("turkiye");
+                                if(pNat.includes("brazil")) traits.push("brezilya");
+                                if(pNat.includes("argentina")) traits.push("arjantin");
+                                if(pNat.includes("germany")) traits.push("almanya");
+                                if(pNat.includes("england")) traits.push("ingiltere");
+                                if(pNat.includes("spain")) traits.push("ispanya");
+                                if(pNat.includes("france")) traits.push("fransa");
+                                if(pNat.includes("italy")) traits.push("italya");
+                                if(pNat.includes("netherlands") || pNat.includes("holland")) traits.push("hollanda");
 
-                    let pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
-                    let teamsCount = transMap.has(pid) ? transMap.get(pid).size : pStats.clubs.size;
+                                if (height > 0 && height <= 175) traits.push("boy_175_alt");
+                                if (birthYear >= 1990 && birthYear <= 1999) traits.push("dogum_90lar");
+                                if (birthYear >= 2000) traits.push("dogum_2000ler");
+                                if (pFoot === 'left') traits.push("sol_ayak");
 
-                    // --- KRİTER ETİKETLEME (TRAITS) ---
-                    const traits = ["herkes"];
-                    
-                    // Fiziksel
-                    if (pFoot === 'left') traits.push("sol_ayak");
-                    if (height > 0 && height <= 175) traits.push("boy_175_alt");
-                    if (birthYear >= 1990 && birthYear <= 1999) traits.push("dogum_90lar");
-                    if (birthYear >= 2000) traits.push("dogum_2000ler");
+                                if (c.has('418') && c.has('131')) traits.push("real_barca");
+                                if (c.has('418') && c.has('13')) traits.push("real_atletico");
+                                if (c.has('131') && c.has('13')) traits.push("barca_atletico");
+                                if (c.has('46') && c.has('5')) traits.push("inter_milan");
+                                if (c.has('27') && c.has('16')) traits.push("bayern_dortmund");
+                                if (c.has('141') && c.has('36')) traits.push("gs_fb");
+                                if (c.has('141') && c.has('114')) traits.push("gs_bjk");
+                                if (c.has('141') && c.has('449')) traits.push("gs_ts");
+                                if (c.has('36') && c.has('114')) traits.push("fb_bjk");
+                                if (c.has('36') && c.has('449')) traits.push("fb_ts");
+                                if (c.has('114') && c.has('449')) traits.push("bjk_ts");
 
-                    // Ülke
-                    if (pNat.includes('brazil')) traits.push("brezilya");
-                    if (pNat.includes('argentina')) traits.push("arjantin");
-                    if (pNat.includes('turkey') || pNat.includes('türkiye')) traits.push("turkiye");
-                    if (pNat.includes('germany')) traits.push("almanya");
-                    if (pNat.includes('england')) traits.push("ingiltere");
-                    if (pNat.includes('spain')) traits.push("ispanya");
-                    if (pNat.includes('france')) traits.push("fransa");
-                    if (pNat.includes('italy')) traits.push("italya");
-                    if (pNat.includes('netherlands') || pNat.includes('holland')) traits.push("hollanda");
+                                let top5 = 0;
+                                if (pStats.comps.has("GB1") || Array.from(c).some(cid => ['11', '31', '985', '281', '379', '148'].includes(cid))) top5++;
+                                if (pStats.comps.has("ES1") || Array.from(c).some(cid => ['418', '131', '13', '150', '1050', '368'].includes(cid))) top5++;
+                                if (pStats.comps.has("IT1") || Array.from(c).some(cid => ['46', '5', '506', '416', '380', '12'].includes(cid))) top5++;
+                                if (pStats.comps.has("L1") || Array.from(c).some(cid => ['27', '16', '15', '82', '79', '3'].includes(cid))) top5++;
+                                if (pStats.comps.has("FR1") || Array.from(c).some(cid => ['583', '1041', '162', '855', '244', '1082'].includes(cid))) top5++;
+                                
+                                if (top5 >= 3) traits.push("top5_3_lig");
+                                if (top5 === 0 && pStats.appsCount > 10) traits.push("bes_buyuk_yok");
 
-                    // Kariyer
-                    let compsSet = pStats.comps;
-                    let c = pStats.clubs;
-                    
-                    let ulkeSayisi = Array.from(compsSet).filter(co => co.endsWith('1')).length;
-                    if (ulkeSayisi >= 4) traits.push("ulke_4_farkli");
-                    if (teamsCount >= 7) traits.push("takim_7_fazla");
-                    if (Object.values(pStats.clubApps).some(v => v >= 200)) traits.push("tek_takim_200_mac");
-                    if (teamsCount === 1 || (teamsCount === 0 && pStats.appsCount > 0)) traits.push("tek_takim_kariyer");
-                    if (pStats.appsCount >= 300) traits.push("mac_300");
-                    if (pStats.redCards === 0 && pStats.appsCount > 50) traits.push("sifir_kirmizi");
-                    
-                    if (pStats.goals >= 20) traits.push("gol_20_defans");
+                                let ulkeSayisi = Array.from(pStats.comps).filter(x => x.endsWith('1')).length;
+                                if (ulkeSayisi >= 4) traits.push("ulke_4_farkli");
+                                if (teamsCount >= 7) traits.push("takim_7_fazla");
+                                if (Object.values(pStats.clubApps).some(v => v >= 200)) traits.push("tek_takim_200_mac");
+                                if (teamsCount === 1 && pStats.appsCount > 50) traits.push("tek_takim_kariyer");
+                                if (pStats.appsCount >= 300) traits.push("mac_300");
+                                if (pStats.redCards === 0 && pStats.appsCount >= 50) traits.push("sifir_kirmizi");
 
-                    // Kulüp ve Ligler
-                    if (c.has('418') && c.has('131')) traits.push("real_barca");
-                    if (c.has('418') && c.has('13')) traits.push("real_atletico");
-                    if (c.has('131') && c.has('13')) traits.push("barca_atletico");
-                    if (c.has('46') && c.has('5')) traits.push("inter_milan");
-                    if (c.has('27') && c.has('16')) traits.push("bayern_dortmund");
-                    if (c.has('141') && c.has('36')) traits.push("gs_fb");
-                    if (c.has('141') && c.has('114')) traits.push("gs_bjk");
-                    if (c.has('141') && c.has('449')) traits.push("gs_ts");
-                    if (c.has('36') && c.has('114')) traits.push("fb_bjk");
-                    if (c.has('36') && c.has('449')) traits.push("fb_ts");
-                    if (c.has('114') && c.has('449')) traits.push("bjk_ts");
+                                const isSuperLig = pStats.comps.has('TR1') || Array.from(c).some(cid => ['141','36','114','449','3209','2381','152','77','3216','236','10484'].includes(cid));
 
-                    let top5 = 0;
-                    if (compsSet.has("GB1") || Array.from(c).some(cid => ['11', '31', '985', '281', '379', '148'].includes(cid))) top5++;
-                    if (compsSet.has("ES1") || Array.from(c).some(cid => ['418', '131', '13', '150', '1050', '368'].includes(cid))) top5++;
-                    if (compsSet.has("IT1") || Array.from(c).some(cid => ['46', '5', '506', '416', '380', '12'].includes(cid))) top5++;
-                    if (compsSet.has("L1")  || Array.from(c).some(cid => ['27', '16', '15', '82', '79', '3'].includes(cid))) top5++;
-                    if (compsSet.has("FR1") || Array.from(c).some(cid => ['583', '1041', '162', '855', '244', '1082'].includes(cid))) top5++;
+                                if (isSuperLig) {
+                                    if (pNat.includes('brazil')) traits.push("tr_brezilyali");
+                                    if (pNat.includes('germany')) traits.push("tr_alman");
+                                    if (pNat.includes('italy')) traits.push("tr_italyan");
+                                    if (pNat.includes('nigeria')) traits.push("tr_nijeryali");
+                                    if (pNat.includes('uruguay')) traits.push("tr_uruguayli");
+                                    
+                                    if (!c.has('141') && !c.has('36') && !c.has('114') && !c.has('449')) {
+                                        traits.push("dort_buyuk_yok");
+                                    }
+                                }
 
-                    if (top5 >= 3) traits.push("top5_3_lig");
-                    if (top5 === 0 && pStats.appsCount > 10) traits.push("bes_buyuk_yok");
+                                if (c.has('31') && pNat.includes('italy')) traits.push("liv_italyan");
+                                if (c.has('46') && pNat.includes('germany')) traits.push("inter_alman");
+                                if (c.has('131') && pNat.includes('france')) traits.push("barca_fransiz");
 
-                    const isSuperLig = compsSet.has('TR1') || Array.from(c).some(cid => ['141','36','114','449','3209','2381','152','77','3216','236','10484'].includes(cid));
+                                if (pStats.goals >= 20) traits.push("gol_20_defans");
+                                if (pStats.goals >= 100) traits.push("gol_100_hucum");
+                                if (pStats.appsCount >= 100) traits.push("mac_100_kaleci");
 
-                    if (isSuperLig) {
-                        if (!c.has('141') && !c.has('36') && !c.has('114') && !c.has('449')) traits.push("dort_buyuk_yok");
-                        if (pNat.includes('brazil')) traits.push("tr_brezilyali");
-                        if (pNat.includes('germany')) traits.push("tr_alman");
-                        if (pNat.includes('italy')) traits.push("tr_italyan");
-                        if (pNat.includes('nigeria')) traits.push("tr_nijeryali");
-                        if (pNat.includes('uruguay')) traits.push("tr_uruguayli");
-                    }
+                                dbPlayers.push({ name: pName, img: pImg, traits: traits });
+                            });
+                        },
+                        complete: resolve,
+                        error: reject
+                    });
+                });
 
-                    if (c.has('31') && pNat.includes('italy')) traits.push("liv_italyan");
-                    if (c.has('46') && pNat.includes('germany')) traits.push("inter_alman");
-                    if (c.has('131') && pNat.includes('france')) traits.push("barca_fransiz");
+                // RAM'i Temizle
+                for (let prop in statsMap) delete statsMap[prop];
+                transMap.clear();
 
-                    loadedPlayers.push({ name: pName, img: pImg, traits: traits });
-                }
-
-                dbPlayers = loadedPlayers;
-                
-                msgEl.innerText = `✓ EFSANELER YÜKLENDİ (${dbPlayers.length} Topçu)`;
+                msgEl.innerText = "✓ OYUN HAZIR!";
                 spinner.style.display = "none";
                 msgEl.parentElement.style.color = "#2ecc71";
                 startBtn.disabled = false;
@@ -595,14 +595,13 @@
             } catch (err) {
                 console.error(err);
                 spinner.style.display = "none";
-                msgEl.innerText = "⚠ HATA";
+                msgEl.innerText = "⚠ DOSYALAR OKUNAMADI";
                 msgEl.parentElement.style.color = "#e74c3c";
                 errEl.style.display = "block";
-                errEl.innerHTML = `Dosyalar okunamadı!<br>GitHub'da 'players.csv', 'appearances.csv', 'transfers.csv' isimlerinin doğruluğundan emin ol.`;
+                errEl.innerHTML = `Lütfen GitHub'daki dosya isimlerinin <b>players.csv</b>, <b>appearances.csv</b> ve <b>transfers.csv</b> olduğuna emin ol.`;
             }
         }
 
-        // KATEGORİ VE DİZİLİŞ TANIMLAMALARI
         const dizilisler = {
             "442": [["ST", "ST"], ["LM", "CM", "CM", "RM"], ["LB", "CB", "CB", "RB"], ["GK"]],
             "433": [["LM", "ST", "RM"], ["CM", "CM", "CM"], ["LB", "CB", "CB", "RB"], ["GK"]],
@@ -664,6 +663,12 @@
             ],
             OZEL_DEFANS: [
                 { text: "Kariyerinde 20+ Gol Atmış", trait: "gol_20_defans" }
+            ],
+            OZEL_HUCUM: [
+                { text: "100+ Kariyer Golü", trait: "gol_100_hucum" }
+            ],
+            OZEL_KALECI: [
+                { text: "Kariyerinde 100+ Maç", trait: "mac_100_kaleci" }
             ]
         };
 
@@ -693,9 +698,13 @@
                 rowArr.forEach(pos => {
                     let mevcutHavuz = [...tumHavuz];
                     
-                    // Defans oyuncularına özel kategoriyi dahil et
+                    // Kaleciye Kaleci, Defansa Defans, Forvete Hücum kuralları gelir (Sorunsuz eşleştirme)
                     if (pos === 'CB' || pos === 'LB' || pos === 'RB') {
                         mevcutHavuz = mevcutHavuz.concat(kriterKategorileri.OZEL_DEFANS.map(c => ({...c, cat: 'DEF'})));
+                    } else if (pos === 'ST' || pos === 'RW' || pos === 'LW' || pos === 'CF') {
+                        mevcutHavuz = mevcutHavuz.concat(kriterKategorileri.OZEL_HUCUM.map(c => ({...c, cat: 'HUC'})));
+                    } else if (pos === 'GK') {
+                        mevcutHavuz = mevcutHavuz.concat(kriterKategorileri.OZEL_KALECI.map(c => ({...c, cat: 'GK'})));
                     }
 
                     let shuffled = mevcutHavuz.sort(() => 0.5 - rnd());
