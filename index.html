@@ -416,7 +416,6 @@
             }
         }
 
-        // ESNEK DEĞER BULUCU KORUMA KALKANI
         function getV(row, possibleKeys) {
             if (!row) return "";
             for (let k of possibleKeys) {
@@ -431,27 +430,19 @@
             return "";
         }
 
-        // ZIRHLI DOĞRUDAN METİN İNDİRİCİ (Asla arka planda sessizce çökmez)
         async function fetchAndProcessDirectly(fileName, msgPrefix, rowProcessor) {
             const msgEl = document.getElementById("loading-msg");
             
             msgEl.innerText = `${msgPrefix} (Dosya çekiliyor...)`;
             const response = await fetch('./' + fileName + '?v=' + Date.now());
-            if (!response.ok) throw new Error(`${fileName} sunucuda bulunamadı! (HTTP ${response.status})`);
+            if (!response.ok) throw new Error(`${fileName} sunucuda bulunamadı!`);
             
             let text = await response.text();
-            if (text.toLowerCase().includes('<!doctype') || text.toLowerCase().includes('<html')) {
-                throw new Error(`GitHub 404 Hatası! ${fileName} adlı dosya deponda yok.`);
-            }
-
-            // Görünmez karakterleri (BOM) tamamen temizle
             text = text.replace(/^\uFEFF/, '');
             
-            msgEl.innerText = `${msgPrefix} (İşleniyor, ekran 3 saniye donabilir...)`;
-            // Arayüzün güncellenmesi için nefes payı
+            msgEl.innerText = `${msgPrefix} (İşleniyor, ekran donabilir...)`;
             await new Promise(r => setTimeout(r, 100));
 
-            // PapaParse'ı en güvenli ve hızlı senkron modda çalıştırıyoruz
             Papa.parse(text, {
                 header: true,
                 skipEmptyLines: true,
@@ -507,37 +498,44 @@
                     if(toC) transMap.get(pid).add(toC);
                 });
 
-                // ADIM 3: EFSANELER
+                // ADIM 3: EFSANELER (SORUNLARIN ÇÖZÜLDÜĞÜ YER)
                 await fetchAndProcessDirectly('players.csv', 'Son Rötuşlar', (row) => {
-                    let pName = getV(row, ['name', 'player_name', 'pretty_name']);
-                    // Bazen Kaggle dosyalarında isim ikiye bölünür, bu ihtimali de ekledik
-                    if (!pName || pName.length < 2) {
-                        let fn = getV(row, ['first_name']);
-                        let ln = getV(row, ['last_name']);
-                        pName = (fn + " " + ln).trim();
-                    }
+                    let pName = getV(row, ['player_name', 'name', 'pretty_name']);
+                    
+                    // Parantez içindeki sinir bozucu sayıları temizleme (Örn: Arda (12345) -> Arda)
+                    pName = pName.replace(/\s*\([0-9]+\)/g, '').trim(); 
+                    
                     if (!pName || pName.length < 2) return;
                     
                     let pid = getV(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if(!pid) return;
 
-                    let pNat = getV(row, ['country_of_citizenship', 'nationality']).toLowerCase();
+                    // Ülke sütununun adını "citizenship" olarak da arattık, artık herkesin ülkesini bilecek
+                    let pNat = getV(row, ['citizenship', 'country_of_citizenship', 'nationality']).toLowerCase();
                     let pFoot = getV(row, ['foot', 'preferred_foot']).toLowerCase();
                     let height = parseInt(getV(row, ['height_in_cm', 'height']) || "0");
                     
                     let dobRaw = getV(row, ['date_of_birth', 'dob']);
                     let birthYear = dobRaw && dobRaw.length >= 4 ? parseInt(dobRaw.substring(0, 4)) : 0;
                     
-                    let pImg = getV(row, ['image_url', 'url', 'photo']);
+                    // Kaggle'ın güncel fotoğraf sütununu da ekledik
+                    let pImg = getV(row, ['player_image_url', 'image_url', 'url', 'photo']);
                     if (!pImg || pImg.length < 5) pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
                     if (pImg.includes('transfermarkt')) pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
 
                     let pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
                     let c = pStats.clubs;
                     
-                    let transSet = transMap.get(pid);
-                    let teamsCount = transSet ? transSet.size : c.size;
+                    // Oynadığı ve transfer olduğu tüm kulüpleri eksiksiz birleştiriyoruz
+                    let currentClub = getV(row, ['current_club_id']).replace(/[^0-9]/g, '');
+                    if(currentClub) c.add(currentClub);
 
+                    let transSet = transMap.get(pid);
+                    if(transSet) {
+                        transSet.forEach(tc => c.add(tc));
+                    }
+                    
+                    let teamsCount = c.size;
                     const traits = ["herkes"];
                     
                     if(pNat.includes("turkey") || pNat.includes("türkiye") || pNat.includes("türk")) traits.push("turkiye");
@@ -610,11 +608,8 @@
                     dbPlayers.push({ name: pName, img: pImg, traits: traits });
                 });
 
-                // RAM Temizliği
                 for (let prop in statsMap) delete statsMap[prop];
                 transMap.clear();
-
-                if(dbPlayers.length === 0) throw new Error("Dosyalar indi ama içinden hiç veri çıkmadı. Dosya yapısı bozuk olabilir.");
 
                 msgEl.innerText = `✓ SİSTEM AKTİF! (${dbPlayers.length.toLocaleString('tr-TR')} Kişi)`;
                 spinner.style.display = "none";
