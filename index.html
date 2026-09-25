@@ -332,14 +332,13 @@
             font-family: inherit;
             cursor: pointer;
             font-size: 28px;
+            width: 100%;
         }
 
         @keyframes shake {
-            0% { transform: translateX(0); }
+            0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-6px); }
-            50% { transform: translateX(6px); }
-            75% { transform: translateX(-6px); }
-            100% { transform: translateX(0); }
+            75% { transform: translateX(6px); }
         }
     </style>
 </head>
@@ -383,7 +382,7 @@
 
     <div class="modal" id="result-modal">
         <div id="result-modal-content">
-            <div id="ss-card">
+            <div id="ss-card" style="background-color: #0b1c11; border: 2px solid #2ecc71; border-radius: 12px; padding: 20px;">
                 <h2 id="ss-title" style="margin: 0 0 10px 0; color: #fff; text-align: center; text-transform: uppercase;">---'in Kadrosu</h2>
                 <div style="text-align: center; margin-bottom: 15px;">
                     <span id="ss-score" style="background:#f1c40f; color:#000; padding:4px 15px; border-radius:20px;">Skor: 0</span>
@@ -440,8 +439,8 @@
             let text = await response.text();
             text = text.replace(/^\uFEFF/, '');
             
-            msgEl.innerText = `${msgPrefix} (İşleniyor, ekran donabilir...)`;
-            await new Promise(r => setTimeout(r, 100));
+            msgEl.innerText = `${msgPrefix} (İşleniyor...)`;
+            await new Promise(r => setTimeout(r, 50));
 
             Papa.parse(text, {
                 header: true,
@@ -459,30 +458,18 @@
             const startBtn = document.getElementById("start-btn");
 
             try {
-                // ADIM 1: MAÇLAR
-                await fetchAndProcessDirectly('appearances.csv', 'Maçlar', (row) => {
+                // ADIM 1: YENİ KÜÇÜLTÜLMÜŞ MAÇ GEÇMİŞİ (150 MB YERİNE 5 MB OLAN DOSYA)
+                await fetchAndProcessDirectly('appearances_kucuk.csv', 'Maç Geçmişi', (row) => {
                     let pid = getV(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if (!pid) return;
                     
-                    if (!statsMap[pid]) {
-                        statsMap[pid] = { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
-                    }
-                    let p = statsMap[pid];
-                    p.appsCount++;
-                    
-                    let g = getV(row, ['goals', 'goal']);
-                    let r = getV(row, ['red_cards', 'red']);
-                    if (g) p.goals += parseInt(g);
-                    if (r) p.redCards += parseInt(r);
-                    
-                    let clubId = getV(row, ['player_club_id', 'club_id']).replace(/[^0-9]/g, '');
-                    if (clubId) {
-                        p.clubs.add(clubId);
-                        p.clubApps[clubId] = (p.clubApps[clubId] || 0) + 1;
-                    }
-                    
-                    let compId = getV(row, ['competition_id', 'comp']);
-                    if (compId) p.comps.add(compId.toUpperCase());
+                    statsMap[pid] = { 
+                        appsCount: parseInt(row.matches || "0"), 
+                        goals: parseInt(row.goals || "0"), 
+                        redCards: parseInt(row.red_cards || "0"), 
+                        clubs: new Set(getV(row, ['player_club_id']).split(',').filter(x => x)), 
+                        comps: new Set(getV(row, ['competition_id']).toUpperCase().split(',').filter(x => x)) 
+                    };
                 });
 
                 // ADIM 2: TRANSFERLER
@@ -498,42 +485,35 @@
                     if(toC) transMap.get(pid).add(toC);
                 });
 
-                // ADIM 3: EFSANELER (SORUNLARIN ÇÖZÜLDÜĞÜ YER)
+                // ADIM 3: OYUNCULAR (ESKİ PLAYERS.CSV'YE DOKUNMADAN İSİMLERİ BURADA TEMİZLİYORUZ)
                 await fetchAndProcessDirectly('players.csv', 'Son Rötuşlar', (row) => {
                     let pName = getV(row, ['player_name', 'name', 'pretty_name']);
                     
-                    // Parantez içindeki sinir bozucu sayıları temizleme (Örn: Arda (12345) -> Arda)
+                    // Parantez içindeki sinir bozucu sayıları KOD İÇİNDE temizliyoruz
                     pName = pName.replace(/\s*\([0-9]+\)/g, '').trim(); 
-                    
                     if (!pName || pName.length < 2) return;
                     
                     let pid = getV(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if(!pid) return;
 
-                    // Ülke sütununun adını "citizenship" olarak da arattık, artık herkesin ülkesini bilecek
                     let pNat = getV(row, ['citizenship', 'country_of_citizenship', 'nationality']).toLowerCase();
                     let pFoot = getV(row, ['foot', 'preferred_foot']).toLowerCase();
                     let height = parseInt(getV(row, ['height_in_cm', 'height']) || "0");
-                    
                     let dobRaw = getV(row, ['date_of_birth', 'dob']);
                     let birthYear = dobRaw && dobRaw.length >= 4 ? parseInt(dobRaw.substring(0, 4)) : 0;
                     
-                    // Kaggle'ın güncel fotoğraf sütununu da ekledik
                     let pImg = getV(row, ['player_image_url', 'image_url', 'url', 'photo']);
                     if (!pImg || pImg.length < 5) pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
                     if (pImg.includes('transfermarkt')) pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
 
-                    let pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set(), clubApps: {} };
+                    let pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set() };
                     let c = pStats.clubs;
                     
-                    // Oynadığı ve transfer olduğu tüm kulüpleri eksiksiz birleştiriyoruz
                     let currentClub = getV(row, ['current_club_id']).replace(/[^0-9]/g, '');
                     if(currentClub) c.add(currentClub);
 
                     let transSet = transMap.get(pid);
-                    if(transSet) {
-                        transSet.forEach(tc => c.add(tc));
-                    }
+                    if(transSet) transSet.forEach(tc => c.add(tc));
                     
                     let teamsCount = c.size;
                     const traits = ["herkes"];
@@ -578,7 +558,6 @@
                     let ulkeSayisi = Array.from(pStats.comps).filter(x => x.endsWith('1')).length;
                     if (ulkeSayisi >= 4) traits.push("ulke_4_farkli");
                     if (teamsCount >= 7) traits.push("takim_7_fazla");
-                    if (Object.values(pStats.clubApps).some(v => v >= 200)) traits.push("tek_takim_200_mac");
                     if (teamsCount <= 2 && pStats.appsCount > 50) traits.push("tek_takim_kariyer");
                     if (pStats.appsCount >= 300) traits.push("mac_300");
                     if (pStats.redCards === 0 && pStats.appsCount >= 50) traits.push("sifir_kirmizi");
@@ -671,7 +650,6 @@
             KARIYER: [
                 { text: "En Az 4 Farklı Ülkede Oynamış", trait: "ulke_4_farkli" },
                 { text: "Kariyerinde 7+ Takımda Oynamış", trait: "takim_7_fazla" },
-                { text: "Tek Bir Takımda 200+ Maç", trait: "tek_takim_200_mac" },
                 { text: "Kariyeri Boyu Tek Takımda Oynamış", trait: "tek_takim_kariyer" },
                 { text: "Kariyerinde 300+ Resmi Maç", trait: "mac_300" },
                 { text: "Hiç Kırmızı Kart Görmemiş", trait: "sifir_kirmizi" }
@@ -849,13 +827,12 @@
         });
 
         function attemptPlacePlayer(player) {
-            score++;
-            document.getElementById("scoreVal").innerText = score;
-            
             const reqTrait = todayGrid[activeSlotId].reqTrait;
             const inputField = document.getElementById("searchInput");
 
             if (player.traits.includes(reqTrait) || reqTrait === "herkes") {
+                score++;
+                document.getElementById("scoreVal").innerText = score;
                 const slotBtn = document.getElementById(`${activeSlotId}-btn`);
                 const nameLabel = document.getElementById(`${activeSlotId}-name`);
                 
