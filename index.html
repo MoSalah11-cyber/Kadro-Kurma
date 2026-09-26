@@ -395,16 +395,9 @@
     </div>
 
     <script>
-        let score = 0;
-        let filledCount = 0;
-        let activeSlotId = null;
-        let username = "";
-        
-        let dailyFormationLayout = [];
-        let todayGrid = {};
-        let dbPlayers = []; 
-        const statsMap = {}; 
-        const transMap = new Map();
+        let score = 0, filledCount = 0, activeSlotId = null, username = "";
+        let dailyFormationLayout = [], todayGrid = {}, dbPlayers = []; 
+        const statsMap = {}, transMap = new Map();
 
         function mulberry32(a) {
             return function() {
@@ -429,9 +422,15 @@
             return "";
         }
 
+        function getBroadPos(posString) {
+            if (posString === 'GK') return 'POS_GK';
+            if (['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(posString)) return 'POS_DEF';
+            if (['CM', 'LM', 'RM', 'CDM', 'CAM'].includes(posString)) return 'POS_MID';
+            return 'POS_ATT';
+        }
+
         async function fetchAndProcessDirectly(fileName, msgPrefix, rowProcessor) {
             const msgEl = document.getElementById("loading-msg");
-            
             msgEl.innerText = `${msgPrefix} (Dosya çekiliyor...)`;
             const response = await fetch('./' + fileName + '?v=' + Date.now());
             if (!response.ok) throw new Error(`${fileName} sunucuda bulunamadı!`);
@@ -443,11 +442,8 @@
             await new Promise(r => setTimeout(r, 50));
 
             Papa.parse(text, {
-                header: true,
-                skipEmptyLines: true,
-                step: function(results) {
-                    if(results.data) rowProcessor(results.data);
-                }
+                header: true, skipEmptyLines: true,
+                step: function(results) { if(results.data) rowProcessor(results.data); }
             });
         }
 
@@ -458,41 +454,28 @@
             const startBtn = document.getElementById("start-btn");
 
             try {
-                // ADIM 1: YENİ KÜÇÜLTÜLMÜŞ MAÇ GEÇMİŞİ (150 MB YERİNE 5 MB OLAN DOSYA)
                 await fetchAndProcessDirectly('appearances_kucuk.csv', 'Maç Geçmişi', (row) => {
                     let pid = getV(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if (!pid) return;
-                    
                     statsMap[pid] = { 
-                        appsCount: parseInt(row.matches || "0"), 
-                        goals: parseInt(row.goals || "0"), 
-                        redCards: parseInt(row.red_cards || "0"), 
-                        clubs: new Set(getV(row, ['player_club_id']).split(',').filter(x => x)), 
-                        comps: new Set(getV(row, ['competition_id']).toUpperCase().split(',').filter(x => x)) 
+                        appsCount: parseInt(row.matches || "0"), goals: parseInt(row.goals || "0"), redCards: parseInt(row.red_cards || "0"), 
+                        clubs: new Set(getV(row, ['player_club_id']).split(',').filter(x => x)), comps: new Set(getV(row, ['competition_id']).toUpperCase().split(',').filter(x => x)) 
                     };
                 });
 
-                // ADIM 2: TRANSFERLER
                 await fetchAndProcessDirectly('transfers.csv', 'Transferler', (row) => {
                     let pid = getV(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if (!pid) return;
                     if (!transMap.has(pid)) transMap.set(pid, new Set());
-                    
                     let fromC = getV(row, ['from_club_id', 'from_club']).replace(/[^0-9]/g, '');
                     let toC = getV(row, ['to_club_id', 'to_club']).replace(/[^0-9]/g, '');
-                    
                     if(fromC) transMap.get(pid).add(fromC);
                     if(toC) transMap.get(pid).add(toC);
                 });
 
-                // ADIM 3: OYUNCULAR (ESKİ PLAYERS.CSV'YE DOKUNMADAN İSİMLERİ BURADA TEMİZLİYORUZ)
                 await fetchAndProcessDirectly('players.csv', 'Son Rötuşlar', (row) => {
-                    let pName = getV(row, ['player_name', 'name', 'pretty_name']);
-                    
-                    // Parantez içindeki sinir bozucu sayıları KOD İÇİNDE temizliyoruz
-                    pName = pName.replace(/\s*\([0-9]+\)/g, '').trim(); 
+                    let pName = getV(row, ['player_name', 'name', 'pretty_name']).replace(/\s*\([0-9]+\)/g, '').trim(); 
                     if (!pName || pName.length < 2) return;
-                    
                     let pid = getV(row, ['player_id', 'id']).replace(/[^0-9]/g, '');
                     if(!pid) return;
 
@@ -506,17 +489,21 @@
                     if (!pImg || pImg.length < 5) pImg = `https://img.a.transfermarkt.technology/portrait/header/${pid}.jpg?lm=1`;
                     if (pImg.includes('transfermarkt')) pImg = `https://wsrv.nl/?url=${pImg.replace('https://', '').replace('http://', '')}&w=120&h=160&fit=cover`;
 
+                    let pPosRaw = getV(row, ['position', 'main_position', 'sub_position']).toUpperCase();
+                    let posTrait = "POS_MID";
+                    if (pPosRaw.includes("GOALKEEPER") || pPosRaw.includes("GK")) posTrait = "POS_GK";
+                    else if (pPosRaw.includes("BACK") || pPosRaw.includes("DEFEND") || pPosRaw.includes("CB") || pPosRaw.includes("LB") || pPosRaw.includes("RB")) posTrait = "POS_DEF";
+                    else if (pPosRaw.includes("FORWARD") || pPosRaw.includes("ATTACK") || pPosRaw.includes("STRIKER") || pPosRaw.includes("WING") || pPosRaw.includes("ST") || pPosRaw.includes("RW") || pPosRaw.includes("LW") || pPosRaw.includes("CF")) posTrait = "POS_ATT";
+
                     let pStats = statsMap[pid] || { appsCount: 0, goals: 0, redCards: 0, clubs: new Set(), comps: new Set() };
                     let c = pStats.clubs;
-                    
                     let currentClub = getV(row, ['current_club_id']).replace(/[^0-9]/g, '');
                     if(currentClub) c.add(currentClub);
-
                     let transSet = transMap.get(pid);
                     if(transSet) transSet.forEach(tc => c.add(tc));
                     
                     let teamsCount = c.size;
-                    const traits = ["herkes"];
+                    const traits = ["herkes", posTrait];
                     
                     if(pNat.includes("turkey") || pNat.includes("türkiye") || pNat.includes("türk")) traits.push("turkiye");
                     if(pNat.includes("brazil")) traits.push("brezilya");
@@ -563,17 +550,13 @@
                     if (pStats.redCards === 0 && pStats.appsCount >= 50) traits.push("sifir_kirmizi");
 
                     const isSuperLig = pStats.comps.has('TR1') || Array.from(c).some(cid => ['141','36','114','449','3209','2381','152','77','3216','236','10484'].includes(cid));
-
                     if (isSuperLig) {
                         if (pNat.includes('brazil')) traits.push("tr_brezilyali");
                         if (pNat.includes('germany') || pNat.includes('alman')) traits.push("tr_alman");
                         if (pNat.includes('italy') || pNat.includes('italyan')) traits.push("tr_italyan");
                         if (pNat.includes('nigeria') || pNat.includes('nijer')) traits.push("tr_nijeryali");
                         if (pNat.includes('uruguay')) traits.push("tr_uruguayli");
-                        
-                        if (!c.has('141') && !c.has('36') && !c.has('114') && !c.has('449')) {
-                            traits.push("dort_buyuk_yok");
-                        }
+                        if (!c.has('141') && !c.has('36') && !c.has('114') && !c.has('449')) traits.push("dort_buyuk_yok");
                     }
 
                     if (c.has('31') && (pNat.includes('italy') || pNat.includes('italyan'))) traits.push("liv_italyan");
@@ -589,6 +572,9 @@
 
                 for (let prop in statsMap) delete statsMap[prop];
                 transMap.clear();
+
+                // CANLI SAĞLAMA MOTORU BURADA ÇALIŞIYOR (Veriler dolduktan sonra)
+                generateDailyGrid();
 
                 msgEl.innerText = `✓ SİSTEM AKTİF! (${dbPlayers.length.toLocaleString('tr-TR')} Kişi)`;
                 spinner.style.display = "none";
@@ -615,64 +601,39 @@
 
         const kriterKategorileri = {
             ULKE: [
-                { text: "Brezilyalı", trait: "brezilya" },
-                { text: "Arjantinli", trait: "arjantin" },
-                { text: "Türk", trait: "turkiye" },
-                { text: "Alman", trait: "almanya" },
-                { text: "İngiliz", trait: "ingiltere" },
-                { text: "İspanyol", trait: "ispanya" },
-                { text: "Fransız", trait: "fransa" },
-                { text: "İtalyan", trait: "italya" },
+                { text: "Brezilyalı", trait: "brezilya" }, { text: "Arjantinli", trait: "arjantin" },
+                { text: "Türk", trait: "turkiye" }, { text: "Alman", trait: "almanya" },
+                { text: "İngiliz", trait: "ingiltere" }, { text: "İspanyol", trait: "ispanya" },
+                { text: "Fransız", trait: "fransa" }, { text: "İtalyan", trait: "italya" },
                 { text: "Hollandalı", trait: "hollanda" }
             ],
             LIG_KULUP: [
-                { text: "Real Madrid & Barcelona", trait: "real_barca" },
-                { text: "Real Madrid & Atl. Madrid", trait: "real_atletico" },
-                { text: "Barcelona & Atl. Madrid", trait: "barca_atletico" },
-                { text: "İnter & Milan", trait: "inter_milan" },
-                { text: "Bayern & Dortmund", trait: "bayern_dortmund" },
-                { text: "Galatasaray & Fenerbahçe", trait: "gs_fb" },
-                { text: "Galatasaray & Beşiktaş", trait: "gs_bjk" },
-                { text: "Galatasaray & Trabzonspor", trait: "gs_ts" },
-                { text: "Fenerbahçe & Beşiktaş", trait: "fb_bjk" },
-                { text: "Fenerbahçe & Trabzonspor", trait: "fb_ts" },
-                { text: "Beşiktaş & Trabzonspor", trait: "bjk_ts" },
-                { text: "5 Büyük Ligin 3'ünde Oynamış", trait: "top5_3_lig" },
-                { text: "5 Büyük Ligde Hiç Oynamamış", trait: "bes_buyuk_yok" },
-                { text: "Süper Lig'de 4 Büyükte Oynamamış", trait: "dort_buyuk_yok" }
+                { text: "Real Madrid & Barcelona", trait: "real_barca" }, { text: "Real Madrid & Atl. Madrid", trait: "real_atletico" },
+                { text: "Barcelona & Atl. Madrid", trait: "barca_atletico" }, { text: "İnter & Milan", trait: "inter_milan" },
+                { text: "Bayern & Dortmund", trait: "bayern_dortmund" }, { text: "Galatasaray & Fenerbahçe", trait: "gs_fb" },
+                { text: "Galatasaray & Beşiktaş", trait: "gs_bjk" }, { text: "Galatasaray & Trabzonspor", trait: "gs_ts" },
+                { text: "Fenerbahçe & Beşiktaş", trait: "fb_bjk" }, { text: "Fenerbahçe & Trabzonspor", trait: "fb_ts" },
+                { text: "Beşiktaş & Trabzonspor", trait: "bjk_ts" }, { text: "5 Büyük Ligin 3'ünde Oynamış", trait: "top5_3_lig" },
+                { text: "5 Büyük Ligde Hiç Oynamamış", trait: "bes_buyuk_yok" }, { text: "Süper Lig'de 4 Büyükte Oynamamış", trait: "dort_buyuk_yok" }
             ],
             FIZIKSEL: [
-                { text: "Sol Ayaklı", trait: "sol_ayak" },
-                { text: "1.75m ve Altı Boy", trait: "boy_175_alt" },
-                { text: "90'lar Doğumlu (90-99)", trait: "dogum_90lar" },
-                { text: "2000 ve Sonrası Doğumlu", trait: "dogum_2000ler" }
+                { text: "Sol Ayaklı", trait: "sol_ayak" }, { text: "1.75m ve Altı Boy", trait: "boy_175_alt" },
+                { text: "90'lar Doğumlu (90-99)", trait: "dogum_90lar" }, { text: "2000 ve Sonrası Doğumlu", trait: "dogum_2000ler" }
             ],
             KARIYER: [
-                { text: "En Az 4 Farklı Ülkede Oynamış", trait: "ulke_4_farkli" },
-                { text: "Kariyerinde 7+ Takımda Oynamış", trait: "takim_7_fazla" },
-                { text: "Kariyeri Boyu Tek Takımda Oynamış", trait: "tek_takim_kariyer" },
-                { text: "Kariyerinde 300+ Resmi Maç", trait: "mac_300" },
+                { text: "En Az 4 Farklı Ülkede Oynamış", trait: "ulke_4_farkli" }, { text: "Kariyerinde 7+ Takımda Oynamış", trait: "takim_7_fazla" },
+                { text: "Kariyeri Boyu Tek Takımda Oynamış", trait: "tek_takim_kariyer" }, { text: "Kariyerinde 300+ Resmi Maç", trait: "mac_300" },
                 { text: "Hiç Kırmızı Kart Görmemiş", trait: "sifir_kirmizi" }
             ],
             MELEZ: [
-                { text: "Süper Lig'de Oynamış Brezilyalı", trait: "tr_brezilyali" },
-                { text: "Süper Lig'de Oynamış Alman", trait: "tr_alman" },
-                { text: "Süper Lig'de Oynamış İtalyan", trait: "tr_italyan" },
-                { text: "Süper Lig'de Oynamış Nijeryalı", trait: "tr_nijeryali" },
-                { text: "Süper Lig'de Oynamış Uruguaylı", trait: "tr_uruguayli" },
-                { text: "Liverpool'da Oynamış İtalyan", trait: "liv_italyan" },
-                { text: "İnter'de Oynamış Alman", trait: "inter_alman" },
-                { text: "Barcelona'da Oynamış Fransız", trait: "barca_fransiz" }
+                { text: "Süper Lig'de Oynamış Brezilyalı", trait: "tr_brezilyali" }, { text: "Süper Lig'de Oynamış Alman", trait: "tr_alman" },
+                { text: "Süper Lig'de Oynamış İtalyan", trait: "tr_italyan" }, { text: "Süper Lig'de Oynamış Nijeryalı", trait: "tr_nijeryali" },
+                { text: "Süper Lig'de Oynamış Uruguaylı", trait: "tr_uruguayli" }, { text: "Liverpool'da Oynamış İtalyan", trait: "liv_italyan" },
+                { text: "İnter'de Oynamış Alman", trait: "inter_alman" }, { text: "Barcelona'da Oynamış Fransız", trait: "barca_fransiz" }
             ],
-            OZEL_DEFANS: [
-                { text: "Kariyerinde 20+ Gol Atmış", trait: "gol_20_defans" }
-            ],
-            OZEL_HUCUM: [
-                { text: "100+ Kariyer Golü", trait: "gol_100_hucum" }
-            ],
-            OZEL_KALECI: [
-                { text: "Kariyerinde 100+ Maç", trait: "mac_100_kaleci" }
-            ]
+            OZEL_DEFANS: [ { text: "Kariyerinde 20+ Gol Atmış", trait: "gol_20_defans" } ],
+            OZEL_HUCUM: [ { text: "100+ Kariyer Golü", trait: "gol_100_hucum" } ],
+            OZEL_KALECI: [ { text: "Kariyerinde 100+ Maç", trait: "mac_100_kaleci" } ]
         };
 
         function generateDailyGrid() {
@@ -711,10 +672,15 @@
 
                     let shuffled = mevcutHavuz.sort(() => 0.5 - rnd());
                     let secilen = null;
+                    let broadPos = getBroadPos(pos); // Pozisyonun genel adını al (örn: POS_DEF)
 
                     for (let c of shuffled) {
                         if (usedTraits.has(c.trait)) continue;
                         
+                        // YENİ: CANLI SAĞLAMA - Veritabanında bu şarta VE bu mevkiye uygun 1 kişi bile var mı?
+                        let isPossible = dbPlayers.some(p => p.traits.includes(c.trait) && p.traits.includes(broadPos));
+                        if (!isPossible) continue; // Eğer uygun topçu yoksa bu zarı çöpe at ve sonrakine geç!
+
                         if (c.cat === 'ULKE') {
                             if (ulkeKotas < 3) {
                                 ulkeKotas++;
@@ -743,7 +709,6 @@
         }
 
         window.onload = () => {
-            generateDailyGrid(); 
             const savedName = localStorage.getItem("grid11_username");
             if (savedName) document.getElementById("nickname-input").value = savedName;
             loadLargeDatabase(); 
@@ -828,9 +793,11 @@
 
         function attemptPlacePlayer(player) {
             const reqTrait = todayGrid[activeSlotId].reqTrait;
+            const reqPos = getBroadPos(todayGrid[activeSlotId].pos);
             const inputField = document.getElementById("searchInput");
 
-            if (player.traits.includes(reqTrait) || reqTrait === "herkes") {
+            // OYUNCU YERLEŞTİRME KONTROLÜ - Hem kriter uyacak hem de mevki doğru olacak!
+            if ((player.traits.includes(reqTrait) || reqTrait === "herkes") && player.traits.includes(reqPos)) {
                 score++;
                 document.getElementById("scoreVal").innerText = score;
                 const slotBtn = document.getElementById(`${activeSlotId}-btn`);
